@@ -70,10 +70,8 @@ export function CartView() {
           <span>Total</span>
           <span>{formatMoney(totalMinor, currency)}</span>
         </div>
-        <button className="btn primary checkout-btn" disabled title="Checkout arrives in Phase 2">
-          Checkout — coming soon
-        </button>
-        <p className="muted checkout-note">Secure checkout with Razorpay (UPI, cards) lands in the next phase.</p>
+        <Link href="/checkout" className="btn primary checkout-btn">Checkout</Link>
+        <p className="muted checkout-note">Secure checkout — UPI, cards, netbanking &amp; wallets.</p>
       </aside>
     </div>
   );

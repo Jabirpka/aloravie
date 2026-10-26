@@ -60,6 +60,7 @@ export function Header() {
           <button className="link-btn" onClick={toggleTheme} aria-label="Toggle evening mode">
             {theme === "dark" ? "Daylight" : "Evening"}
           </button>
+          <Link href="/account" className="link-btn">Account</Link>
           <Link href="/cart" className="link-btn bag-link">
             Bag
             {count > 0 && <span className="bag-count" aria-label={`${count} items in bag`}>{count}</span>}

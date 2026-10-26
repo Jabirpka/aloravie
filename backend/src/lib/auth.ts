@@ -44,6 +44,28 @@ export function verifyAccessToken(token: string): AccessTokenPayload {
   return { sub, role, email };
 }
 
+// --- Customer (storefront) access tokens ---
+
+export interface CustomerTokenPayload {
+  sub: string; // customer id
+  typ: "customer";
+  email?: string;
+}
+
+export function signCustomerAccessToken(payload: Omit<CustomerTokenPayload, "typ">): string {
+  return jwt.sign({ ...payload, typ: "customer" }, env.JWT_ACCESS_SECRET, {
+    expiresIn: durationToSeconds(env.ACCESS_TOKEN_TTL),
+  });
+}
+
+export function verifyCustomerAccessToken(token: string): CustomerTokenPayload {
+  const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET);
+  if (typeof decoded === "string") throw new Error("Unexpected token form");
+  const payload = decoded as jwt.JwtPayload & Partial<CustomerTokenPayload>;
+  if (!payload.sub || payload.typ !== "customer") throw new Error("Not a customer token");
+  return { sub: payload.sub, typ: "customer", ...(payload.email ? { email: payload.email } : {}) };
+}
+
 // --- Refresh tokens: random opaque string; only its hash is stored. ---
 
 export function generateRefreshToken(): string {

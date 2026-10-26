@@ -10,6 +10,23 @@ const schema = z.object({
   ACCESS_TOKEN_TTL: z.string().default("15m"),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
   CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:5173"),
+
+  // Payments
+  PAYMENT_MODE: z.enum(["mock", "razorpay"]).default("mock"),
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
+
+  // Pricing rules (minor units / paise)
+  SHIPPING_FLAT_MINOR: z.coerce.number().int().nonnegative().default(9900),
+  FREE_SHIP_THRESHOLD_MINOR: z.coerce.number().int().nonnegative().default(149900),
+}).superRefine((val, ctx) => {
+  if (val.PAYMENT_MODE === "razorpay" && (!val.RAZORPAY_KEY_ID || !val.RAZORPAY_KEY_SECRET)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["RAZORPAY_KEY_ID"],
+      message: "RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are required when PAYMENT_MODE=razorpay",
+    });
+  }
 });
 
 const parsed = schema.safeParse(process.env);

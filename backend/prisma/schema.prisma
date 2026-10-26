@@ -53,17 +53,33 @@ model RefreshToken {
 
 // Shoppers on the storefront and marketplaces.
 model Customer {
-  id        String    @id @default(cuid())
-  email     String?   @unique
-  phone     String?   @unique
-  name      String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id           String   @id @default(cuid())
+  email        String?  @unique
+  phone        String?  @unique
+  name         String?
+  passwordHash String? // null for marketplace/guest customers who never set one
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  addresses Address[]
-  orders    Order[]
+  addresses     Address[]
+  orders        Order[]
+  refreshTokens CustomerRefreshToken[]
 
   @@map("customers")
+}
+
+// Rotating refresh tokens for storefront customers (stored hashed, revocable).
+model CustomerRefreshToken {
+  id         String    @id @default(cuid())
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([customerId])
+  @@map("customer_refresh_tokens")
 }
 
 enum AddressType {
@@ -243,6 +259,11 @@ model Order {
   customer      Customer?    @relation(fields: [customerId], references: [id])
   status        OrderStatus  @default(PENDING)
 
+  // Contact + shipping snapshot (preserved at order time)
+  email           String?
+  phone           String?
+  shippingAddress Json?
+
   // Money (minor units)
   currency      String       @default("INR")
   subtotalMinor Int          @default(0)
@@ -257,11 +278,43 @@ model Order {
   placedAt      DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  items OrderItem[]
+  items   OrderItem[]
+  payment Payment?
 
   @@index([status])
   @@index([channelId])
+  @@index([customerId])
   @@map("orders")
+}
+
+enum PaymentProvider {
+  RAZORPAY
+  MOCK
+  COD
+}
+
+enum PaymentStatus {
+  CREATED
+  PAID
+  FAILED
+  REFUNDED
+}
+
+// One payment attempt per order (one-to-one for now).
+model Payment {
+  id              String          @id @default(cuid())
+  orderId         String          @unique
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider        PaymentProvider
+  status          PaymentStatus   @default(CREATED)
+  amountMinor     Int
+  currency        String          @default("INR")
+  providerOrderId String? // e.g. Razorpay order id
+  providerPaymentId String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("payments")
 }
 
 model OrderItem {

@@ -42,6 +42,14 @@ Catalog: `Category` → `Product` → `ProductVariant` (the sellable unit, carri
 - Styling is plain CSS with brand tokens (`globals.css` + `components.css`), mirroring `shared/brand/`. Jost via `next/font`. No Tailwind — keeps it dependency-light and on-brand.
 - Cart is client-side (React context + `localStorage`) until Phase 2 ties it to customer accounts and checkout.
 
+## Checkout & payments (Phase 2)
+
+- **Customer auth** is separate from staff auth: customer JWTs carry `typ: "customer"`, verified by a dedicated middleware; rotating refresh tokens in `customer_refresh_tokens`. The web client stores tokens in `localStorage` and refreshes once on a 401.
+- **GST**: apparel slabs — 5% up to ₹1,000/piece, 12% above (`src/lib/tax.ts`). Simplified; production should drive rates from an HSN/tax table per product. The storefront shows a live estimate; the **server total is authoritative**.
+- **Checkout** (`POST /api/checkout`): prices the cart server-side, computes GST + shipping, snapshots the shipping address onto the order, **reserves stock** (`InventoryItem.reserved`) in a transaction, and creates a `PENDING` order + a `Payment` row.
+- **Payments**: `PAYMENT_MODE=mock` (dev: a simulated confirm endpoint) or `razorpay`. Razorpay orders are created via REST (no SDK dependency); the callback signature is verified with HMAC-SHA256. On success the order becomes `CONFIRMED` and reserved stock is **committed** (onHand and reserved decremented). Confirmation is idempotent on a non-PENDING order.
+- **Order numbers**: `ALV-YYYY-NNNNN` from a per-year counter (move to a DB sequence before high volume).
+
 ### Security note — Next.js upgrade before launch
 We pin the **Next 14.2.x** patched line (14.2.35+), which closes the critical middleware auth-bypass CVE. `npm audit` still lists many Next advisories whose fixes land only in the **Next 16** line; most do not apply to our current setup (plain `<img>`, no image optimizer with remote patterns, no Server Actions, no custom server). **Before public launch, upgrade to Next 16** (a breaking major bump — `params`/`searchParams` become async) and re-audit. Tracked as a pre-launch task.
 

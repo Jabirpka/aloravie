@@ -27,11 +27,14 @@ The shop customers see. Built as a Next.js (App Router, TS) app in `web/`, wired
 - ✅ Verified live: typechecks, production build clean, full add-to-bag → cart flow works, no console errors
 - Remaining in later passes: free-text search, real product images/galleries, account-linked cart (needs Phase 2 auth for customers)
 
-## Phase 2 — Checkout + Payments ⬜
-- Checkout flow, addresses
-- **Razorpay** (cards, UPI, netbanking, wallets)
-- GST handling, order creation, confirmation
-- Customer accounts & order history
+## Phase 2 — Checkout + Payments ✅ (core)
+- ✅ Customer accounts: register/login/refresh/logout/me (separate from staff), addresses
+- ✅ Checkout: cart → order with GST (5%/12% apparel slabs) + shipping, stock reserved on order
+- ✅ Payments: **Razorpay** (UPI/cards/netbanking/wallets) + a dev **mock** mode; signature verification; inventory committed on payment
+- ✅ Order creation, confirmation page, order history
+- ✅ Verified: backend + web typecheck and build clean; routes enforce auth (401) and validation (400); `/payments/mode` works
+- ⏳ Not yet run against a live DB here (no Postgres in this environment). To test the full flow: run Postgres, `prisma:migrate` + `db:seed`, start backend + web, register, add to bag, checkout (mock mode). Live Razorpay needs the brand's test/live keys.
+- Later: GST invoice PDF (Phase 4), COD, saved-address picker in checkout UI
 
 ## Phase 3 — Business back office ⬜
 The operational core the brand is run from.

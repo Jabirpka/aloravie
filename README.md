@@ -36,6 +36,32 @@ npm run dev
 
 The API boots on `http://localhost:4000`. `GET /health` works without a database; everything else needs the migrated DB.
 
+## Getting started (web storefront)
+
+```bash
+cd web
+cp .env.example .env.local   # points at http://localhost:4000 by default
+npm install
+npm run dev
+```
+
+The storefront runs on `http://localhost:3000`. It renders a sample catalogue until the backend DB is live.
+
+## Running the full stack (with checkout)
+
+1. **Start PostgreSQL** (any instance; quickest is Docker):
+   ```bash
+   docker run -d --name aloravie-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=aloravie -p 5432:5432 postgres:16
+   ```
+2. **Migrate + seed** the backend:
+   ```bash
+   cd backend && npm run prisma:migrate && npm run db:seed
+   ```
+3. **Run both** apps (`backend` on :4000, `web` on :3000). `PAYMENT_MODE=mock` (the default) lets you complete checkout without a real gateway.
+4. In the storefront: create an account → add to bag → checkout → the order confirms and appears under **My orders**.
+
+For real payments set `PAYMENT_MODE=razorpay` and add `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` (Razorpay test keys work end to end) in `backend/.env`.
+
 ## Conventions
 
 - **Money is always integer minor units** (paise for INR) in a `*Minor` field, paired with a `currency` code. Never floats. See `backend/src/lib/money.ts`.

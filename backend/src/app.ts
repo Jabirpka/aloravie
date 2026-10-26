@@ -12,6 +12,7 @@ import { customerRouter } from "./modules/customers/customers.routes.js";
 import { checkoutRouter } from "./modules/checkout/checkout.routes.js";
 import { paymentRouter } from "./modules/payments/payments.routes.js";
 import { orderRouter } from "./modules/orders/orders.routes.js";
+import { adminRouter } from "./modules/admin/admin.routes.js";
 
 export function createApp(): Express {
   const app = express();
@@ -34,6 +35,7 @@ export function createApp(): Express {
   app.use("/api/checkout", checkoutRouter);
   app.use("/api/payments", paymentRouter);
   app.use("/api/orders", orderRouter);
+  app.use("/api/admin", adminRouter);
 
   // Fallbacks
   app.use(notFoundHandler);

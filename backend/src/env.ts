@@ -9,7 +9,7 @@ const schema = z.object({
   JWT_REFRESH_SECRET: z.string().min(16, "JWT_REFRESH_SECRET must be at least 16 chars"),
   ACCESS_TOKEN_TTL: z.string().default("15m"),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
-  CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:5173"),
+  CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:3001,http://localhost:5173"),
 
   // Payments
   PAYMENT_MODE: z.enum(["mock", "razorpay"]).default("mock"),

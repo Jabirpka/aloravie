@@ -36,6 +36,14 @@ Two distinct identities:
 
 Catalog: `Category` → `Product` → `ProductVariant` (the sellable unit, carries SKU + price). Stock is `InventoryItem` (variant × location). Selling happens on a `SalesChannel` (WEB, marketplaces). Orders (`Order` → `OrderItem`) reference the channel they came from, so marketplace orders flow through the same pipeline.
 
+## Back office / admin (Phase 3)
+
+- A **separate Next.js app** in `admin/` (port 3001), so staff tokens and the admin bundle never mix with the storefront. Same brand tokens, same light/Evening themes, but a dense tool UI (sidebar shell, data tables, stat tiles, status pills).
+- Uses the existing **staff auth** (`/api/auth/*`); all data comes from `/api/admin/*`, which is gated by `authenticate` + `requireRole(OWNER, ADMIN, STAFF)`.
+- **Order status** changes go through a transition map (same on client and server); cancelling/returning releases reserved stock or restocks committed stock in a transaction.
+- **Inventory** edits set on-hand per variant × location (`available = onHand − reserved`).
+- CORS allows `http://localhost:3001` alongside the storefront origin.
+
 ## Web storefront (Phase 1)
 
 - **Next.js 14.2 (App Router, TypeScript)** in `web/`. Server components fetch the catalog from the backend; a bundled sample catalog (`src/lib/sample.ts`) renders the shop before Postgres is running.

@@ -36,11 +36,15 @@ The shop customers see. Built as a Next.js (App Router, TS) app in `web/`, wired
 - ⏳ Not yet run against a live DB here (no Postgres in this environment). To test the full flow: run Postgres, `prisma:migrate` + `db:seed`, start backend + web, register, add to bag, checkout (mock mode). Live Razorpay needs the brand's test/live keys.
 - Later: GST invoice PDF (Phase 4), COD, saved-address picker in checkout UI
 
-## Phase 3 — Business back office ⬜
-The operational core the brand is run from.
-- Inventory / stock control (per variant, per location)
-- Customer management (CRM): profiles, history, segments
-- Order management: statuses, picking/packing, refunds/returns
+## Phase 3 — Business back office ✅ (core)
+The operational core the brand is run from. Built as a separate staff admin app in `admin/` (Next.js, port 3001), with admin API under `/api/admin/*` (staff-auth only).
+- ✅ Dashboard: revenue, orders, customers, product counts + status breakdown, recent orders, low stock
+- ✅ Order management: list + filter by status, detail, status transitions (confirm → pack → ship → deliver; cancel/return) with stock release/restock
+- ✅ Inventory / stock control: per variant × location, available = onHand − reserved, inline on-hand adjustment, low-stock view
+- ✅ Customer management (CRM): searchable list with order count + lifetime spend, detail with orders & addresses
+- ✅ Products: list all statuses, activate/archive
+- ✅ Verified: backend + admin typecheck and build clean; `/api/admin/*` enforce staff auth (401); login UI renders
+- ⏳ Not run against a live DB here (no Postgres). Later: staff user management UI, product create/edit forms, refunds, CSV export, segments
 
 ## Phase 4 — Fulfilment & delivery ⬜
 - Courier integration (**Shiprocket / Delhivery**): rates, booking, pickup

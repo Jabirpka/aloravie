@@ -16,12 +16,14 @@ This is a monorepo for the web store, the mobile apps, the business back office,
 ## Layout
 
 ```
-backend/    Node + TypeScript + Express + Prisma (PostgreSQL) API and back office
+backend/    Node + TypeScript + Express + Prisma (PostgreSQL) API
+web/        Storefront (Next.js) — the shop customers see          :3000
+admin/      Back office (Next.js) — staff dashboard & operations    :3001
 shared/     Cross-cutting assets shared by web, apps and admin (brand design tokens)
 docs/       ROADMAP.md (phases) and ARCHITECTURE.md (decisions)
 ```
 
-The storefront web app and the Flutter mobile apps are added in later phases (see `docs/ROADMAP.md`).
+The Flutter mobile apps are added in a later phase (see `docs/ROADMAP.md`).
 
 ## Getting started (backend)
 
@@ -46,6 +48,17 @@ npm run dev
 ```
 
 The storefront runs on `http://localhost:3000`. It renders a sample catalogue until the backend DB is live.
+
+## Getting started (admin / back office)
+
+```bash
+cd admin
+cp .env.example .env.local   # points at http://localhost:4000
+npm install
+npm run dev
+```
+
+The back office runs on `http://localhost:3001`. Sign in with a staff account — the **first account** ever registered (via `POST /api/auth/register`) becomes the OWNER. It needs the backend + a migrated DB.
 
 ## Running the full stack (with checkout)
 

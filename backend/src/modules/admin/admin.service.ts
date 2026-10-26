@@ -77,7 +77,13 @@ export function listOrders(opts: { status?: OrderStatus } = {}) {
 export async function getOrder(orderNumber: string) {
   const order = await prisma.order.findUnique({
     where: { orderNumber },
-    include: { items: true, customer: true, channel: true, payment: true },
+    include: {
+      items: true,
+      customer: true,
+      channel: true,
+      payment: true,
+      shipment: { include: { events: { orderBy: { occurredAt: "asc" } } } },
+    },
   });
   if (!order) throw notFound(`Order ${orderNumber} not found`);
   return order;

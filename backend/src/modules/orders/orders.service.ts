@@ -5,6 +5,7 @@ const orderInclude = {
   items: true,
   payment: true,
   channel: { select: { type: true, name: true } },
+  shipment: { include: { events: { orderBy: { occurredAt: "asc" } } } },
 } as const;
 
 export function listOrdersForCustomer(customerId: string) {

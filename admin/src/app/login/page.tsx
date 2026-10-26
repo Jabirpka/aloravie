@@ -34,7 +34,7 @@ export default function LoginPage() {
   return (
     <div className="login-wrap">
       <div className="login-card">
-        <span className="wordmark login-brand">alorav<span className="sun">i</span>e</span>
+        <span className="wordmark login-brand">alorav<span className="sun">{"ı"}</span>e</span>
         <p className="login-sub">Back office · staff sign in</p>
         <form className="login-form" onSubmit={submit}>
           <label>

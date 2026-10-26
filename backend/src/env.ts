@@ -19,12 +19,33 @@ const schema = z.object({
   // Pricing rules (minor units / paise)
   SHIPPING_FLAT_MINOR: z.coerce.number().int().nonnegative().default(9900),
   FREE_SHIP_THRESHOLD_MINOR: z.coerce.number().int().nonnegative().default(149900),
+
+  // Fulfilment / courier
+  COURIER_MODE: z.enum(["mock", "shiprocket"]).default("mock"),
+  SHIPROCKET_EMAIL: z.string().optional(),
+  SHIPROCKET_PASSWORD: z.string().optional(),
+  SHIPROCKET_PICKUP_LOCATION: z.string().optional(),
+
+  // Seller identity (printed on invoices / delivery notes / labels)
+  SELLER_NAME: z.string().default("Aloravie"),
+  SELLER_GSTIN: z.string().default(""),
+  SELLER_ADDRESS: z.string().default("Bengaluru, Karnataka, India"),
+  SELLER_STATE: z.string().default("Karnataka"),
+  SELLER_EMAIL: z.string().default("care@aloravie.example"),
+  SELLER_PHONE: z.string().default(""),
 }).superRefine((val, ctx) => {
   if (val.PAYMENT_MODE === "razorpay" && (!val.RAZORPAY_KEY_ID || !val.RAZORPAY_KEY_SECRET)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["RAZORPAY_KEY_ID"],
       message: "RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are required when PAYMENT_MODE=razorpay",
+    });
+  }
+  if (val.COURIER_MODE === "shiprocket" && (!val.SHIPROCKET_EMAIL || !val.SHIPROCKET_PASSWORD)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["SHIPROCKET_EMAIL"],
+      message: "SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD are required when COURIER_MODE=shiprocket",
     });
   }
 });

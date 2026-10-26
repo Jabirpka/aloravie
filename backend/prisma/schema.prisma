@@ -278,8 +278,9 @@ model Order {
   placedAt      DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  items   OrderItem[]
-  payment Payment?
+  items    OrderItem[]
+  payment  Payment?
+  shipment Shipment?
 
   @@index([status])
   @@index([channelId])
@@ -331,4 +332,58 @@ model OrderItem {
 
   @@index([orderId])
   @@map("order_items")
+}
+
+// ---------------------------------------------------------------------------
+// Fulfilment
+// ---------------------------------------------------------------------------
+
+enum CourierProvider {
+  SHIPROCKET
+  DELHIVERY
+  MOCK
+}
+
+enum ShipmentStatus {
+  CREATED
+  LABEL_READY
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  RTO
+  CANCELLED
+}
+
+// One shipment per order (one-to-one for now).
+model Shipment {
+  id                 String          @id @default(cuid())
+  orderId            String          @unique
+  order              Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider           CourierProvider
+  courierName        String
+  awb                String? // tracking / air waybill number
+  status             ShipmentStatus  @default(CREATED)
+  trackingUrl        String?
+  providerShipmentId String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  events TrackingEvent[]
+
+  @@map("shipments")
+}
+
+model TrackingEvent {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  status     String // human-facing label, e.g. "Picked up"
+  location   String?
+  note       String?
+  occurredAt DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([shipmentId])
+  @@map("tracking_events")
 }

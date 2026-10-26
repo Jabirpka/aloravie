@@ -8,6 +8,7 @@ import type {
   OrderRow,
   OrderStatus,
   ProductStatus,
+  Shipment,
   StaffUser,
   Summary,
 } from "./types";
@@ -190,4 +191,36 @@ export async function listCustomers(q?: string): Promise<CustomerRow[]> {
 
 export async function getCustomer(id: string): Promise<CustomerDetail> {
   return ((await apiFetch(`/api/admin/customers/${id}`)) as { customer: CustomerDetail }).customer;
+}
+
+// --- Fulfilment ---
+
+export async function createShipment(orderId: string): Promise<Shipment> {
+  return (
+    (await apiFetch(`/api/admin/orders/${orderId}/shipment`, { method: "POST" })) as { shipment: Shipment }
+  ).shipment;
+}
+
+export async function syncTracking(shipmentId: string): Promise<Shipment> {
+  return (
+    (await apiFetch(`/api/admin/shipments/${shipmentId}/sync`, { method: "POST" })) as { shipment: Shipment }
+  ).shipment;
+}
+
+export type DocumentKind = "invoice" | "delivery-note" | "label";
+
+// Fetch a printable document (HTML) with auth, so navigation doesn't drop the token.
+export async function fetchDocumentHtml(orderNumber: string, kind: DocumentKind): Promise<string> {
+  const path = `/api/admin/orders/${encodeURIComponent(orderNumber)}/${kind}`;
+  const headers = new Headers();
+  const token = getAccessToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  let res = await fetch(`${API_URL}${path}`, { headers });
+  if (res.status === 401 && (await tryRefresh())) {
+    const retry = new Headers();
+    retry.set("Authorization", `Bearer ${getAccessToken()}`);
+    res = await fetch(`${API_URL}${path}`, { headers: retry });
+  }
+  if (!res.ok) throw new ApiRequestError(res.status, await res.json().catch(() => ({})));
+  return res.text();
 }

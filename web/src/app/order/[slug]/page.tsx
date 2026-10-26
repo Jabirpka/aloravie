@@ -75,6 +75,28 @@ export default function OrderPage() {
           {order.orderNumber} · <span className={`status-pill status-${order.status.toLowerCase()}`}>{STATUS_LABEL[order.status]}</span>
         </p>
 
+        {order.shipment && (
+          <div className="tracking">
+            <div className="tracking-head">
+              <span className="strong">{order.shipment.courierName}</span>
+              {order.shipment.awb && <span className="muted">AWB {order.shipment.awb}</span>}
+            </div>
+            {order.shipment.events.length === 0 ? (
+              <p className="muted">Your parcel is being prepared. Tracking updates will appear here.</p>
+            ) : (
+              <ol className="tracking-timeline">
+                {order.shipment.events.map((e, i) => (
+                  <li key={e.id} className={i === order.shipment!.events.length - 1 ? "current" : ""}>
+                    <span className="t-dot" aria-hidden="true" />
+                    <span className="t-status">{e.status}{e.location ? ` · ${e.location}` : ""}</span>
+                    <span className="muted t-time">{new Date(e.occurredAt).toLocaleString("en-IN")}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        )}
+
         <div className="order-items">
           {order.items.map((it) => (
             <div key={it.id} className="order-item">

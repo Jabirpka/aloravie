@@ -36,6 +36,13 @@ Two distinct identities:
 
 Catalog: `Category` → `Product` → `ProductVariant` (the sellable unit, carries SKU + price). Stock is `InventoryItem` (variant × location). Selling happens on a `SalesChannel` (WEB, marketplaces). Orders (`Order` → `OrderItem`) reference the channel they came from, so marketplace orders flow through the same pipeline.
 
+## Fulfilment (Phase 4)
+
+- **Courier** behind a small abstraction (`backend/src/modules/fulfilment/courier.service.ts`): `COURIER_MODE=mock` issues an AWB and advances a mock tracking timeline one stage per sync (demoable without any account); `shiprocket` calls Shiprocket's REST API (auth + ad-hoc order) and needs `SHIPROCKET_*` + a pickup location. Live Shiprocket tracking sync is left to their webhook (sync returns 501 in that mode).
+- **Shipment** (one per order) + **TrackingEvent**. Booking a shipment moves the order to `SHIPPED`; a mock delivery marks the order `DELIVERED`.
+- **Documents** are server-rendered **printable HTML** (`documents.ts`) — GST invoice (CGST+SGST intra-state vs IGST inter-state by comparing buyer state to `SELLER_STATE`), delivery note (no prices), shipping label (AWB + ship-to, A6). No PDF dependency: the page has a Print button → the browser's Save-as-PDF. Document endpoints are staff-auth; the admin fetches them with the bearer token and opens a print window, so navigation never drops auth.
+- Seller identity for documents comes from `SELLER_*` env (name, GSTIN, address, state). The invoice flags when GSTIN is unset.
+
 ## Back office / admin (Phase 3)
 
 - A **separate Next.js app** in `admin/` (port 3001), so staff tokens and the admin bundle never mix with the storefront. Same brand tokens, same light/Evening themes, but a dense tool UI (sidebar shell, data tables, stat tiles, status pills).

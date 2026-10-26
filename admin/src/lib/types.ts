@@ -66,6 +66,33 @@ export interface OrderItem {
   totalMinor: number;
 }
 
+export type ShipmentStatus =
+  | "CREATED"
+  | "LABEL_READY"
+  | "PICKED_UP"
+  | "IN_TRANSIT"
+  | "OUT_FOR_DELIVERY"
+  | "DELIVERED"
+  | "RTO"
+  | "CANCELLED";
+
+export interface TrackingEvent {
+  id: string;
+  status: string;
+  location: string | null;
+  occurredAt: string;
+}
+
+export interface Shipment {
+  id: string;
+  provider: string;
+  courierName: string;
+  awb: string | null;
+  status: ShipmentStatus;
+  trackingUrl: string | null;
+  events: TrackingEvent[];
+}
+
 export interface OrderDetail {
   id: string;
   orderNumber: string;
@@ -83,6 +110,7 @@ export interface OrderDetail {
   customer: { id: string; name: string | null; email: string | null } | null;
   channel: { type: string; name: string } | null;
   payment: { status: string; provider: string; amountMinor: number } | null;
+  shipment: Shipment | null;
 }
 
 export interface InventoryRow {

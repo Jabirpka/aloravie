@@ -46,10 +46,13 @@ The operational core the brand is run from. Built as a separate staff admin app 
 - ✅ Verified: backend + admin typecheck and build clean; `/api/admin/*` enforce staff auth (401); login UI renders
 - ⏳ Not run against a live DB here (no Postgres). Later: staff user management UI, product create/edit forms, refunds, CSV export, segments
 
-## Phase 4 — Fulfilment & delivery ⬜
-- Courier integration (**Shiprocket / Delhivery**): rates, booking, pickup
-- Order tracking (customer-facing timeline + notifications)
-- **Invoice** generator (GST), **delivery note**, **shipping label / address** printing
+## Phase 4 — Fulfilment & delivery ✅ (core)
+- ✅ Courier integration: **Shiprocket** (real REST; needs account + pickup location) + a dev **mock** courier that issues an AWB and advances tracking
+- ✅ Shipments model + tracking events; booking a shipment moves the order to SHIPPED; delivery marks it DELIVERED
+- ✅ Order tracking: customer-facing timeline on the storefront order page; staff sync in the admin
+- ✅ **Invoice** (GST, CGST/SGST vs IGST by state), **delivery note** (no prices), **shipping label** (AWB + ship-to) — server-rendered printable HTML (Print → PDF), verified from a sample order
+- ✅ Verified: all three apps typecheck/build clean; fulfilment routes enforce staff auth (401); document generators rendered and field-checked
+- ⏳ Not run against a live DB (no Postgres). Later: courier rate shopping, live Shiprocket tracking webhook, email/SMS/WhatsApp notifications on status change (Phase 7), bulk label print
 
 ## Phase 5 — Marketplace sync ⬜
 One stock pool across all channels.

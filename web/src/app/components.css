@@ -464,6 +464,17 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .status-pill.status-pending { color: var(--clay); border-color: color-mix(in srgb, var(--clay) 40%, transparent); }
 .status-pill.status-shipped, .status-pill.status-packed { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
 
+/* ---------------- Order tracking ---------------- */
+.strong { font-weight: 500; }
+.tracking { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 24px; }
+.tracking-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; font-size: 14px; }
+.tracking-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.tracking-timeline li { display: grid; grid-template-columns: 18px 1fr auto; gap: 12px; align-items: center; padding: 7px 0; }
+.t-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.tracking-timeline li.current .t-dot { background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+.t-status { font-size: 14px; }
+.t-time { font-size: 12.5px; white-space: nowrap; }
+
 /* ---------------- Responsive ---------------- */
 @media (max-width: 920px) {
   .pdp { grid-template-columns: 1fr; gap: 28px; }

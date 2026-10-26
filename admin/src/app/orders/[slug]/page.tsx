@@ -5,7 +5,15 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { useAuth } from "@/components/AdminAuthProvider";
-import { getOrder, updateOrderStatus, ApiRequestError } from "@/lib/api";
+import {
+  ApiRequestError,
+  createShipment,
+  fetchDocumentHtml,
+  getOrder,
+  syncTracking,
+  updateOrderStatus,
+  type DocumentKind,
+} from "@/lib/api";
 import { formatMoney } from "@/lib/money";
 import type { OrderDetail, OrderStatus } from "@/lib/types";
 
@@ -57,7 +65,54 @@ export default function OrderDetailPage() {
     }
   }
 
+  async function bookShipment() {
+    if (!order) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const shipment = await createShipment(order.id);
+      setOrder({ ...order, shipment, status: "SHIPPED" });
+    } catch (err) {
+      setError(err instanceof ApiRequestError ? err.message : "Couldn't book the shipment.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sync() {
+    if (!order?.shipment) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const shipment = await syncTracking(order.shipment.id);
+      setOrder({ ...order, shipment, status: shipment.status === "DELIVERED" ? "DELIVERED" : order.status });
+    } catch (err) {
+      setError(err instanceof ApiRequestError ? err.message : "Couldn't sync tracking.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function openDoc(kind: DocumentKind) {
+    if (!order) return;
+    setError(null);
+    try {
+      const html = await fetchDocumentHtml(order.orderNumber, kind);
+      const w = window.open("", "_blank");
+      if (!w) {
+        setError("Please allow pop-ups to open the document.");
+        return;
+      }
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+    } catch (err) {
+      setError(err instanceof ApiRequestError ? err.message : "Couldn't open the document.");
+    }
+  }
+
   const addr = order?.shippingAddress;
+  const canShip = order && !order.shipment && (order.status === "CONFIRMED" || order.status === "PACKED");
 
   return (
     <Shell title={order ? `Order ${order.orderNumber}` : "Order"}>
@@ -151,6 +206,53 @@ export default function OrderDetailPage() {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <h2>Fulfilment</h2>
+              <div className="status-actions">
+                <button className="btn sm" onClick={() => openDoc("invoice")}>Invoice</button>
+                <button className="btn sm" onClick={() => openDoc("delivery-note")}>Delivery note</button>
+                <button className="btn sm" onClick={() => openDoc("label")}>Label</button>
+              </div>
+            </div>
+            <div className="card-body">
+              {canShip && (
+                <button className="btn primary" disabled={busy} onClick={bookShipment}>
+                  {busy ? "Booking…" : "Book shipment"}
+                </button>
+              )}
+              {!order.shipment && !canShip && (
+                <p className="muted">Confirm the order to book a shipment. The documents above are available now.</p>
+              )}
+              {order.shipment && (
+                <>
+                  <dl style={{ margin: "0 0 14px" }}>
+                    <div className="kv"><dt>Courier</dt><dd>{order.shipment.courierName}</dd></div>
+                    <div className="kv"><dt>AWB</dt><dd className="strong">{order.shipment.awb ?? "—"}</dd></div>
+                    <div className="kv"><dt>Status</dt><dd><span className={`pill ${order.shipment.status.toLowerCase()}`}>{order.shipment.status.replace(/_/g, " ")}</span></dd></div>
+                  </dl>
+                  {order.shipment.status !== "DELIVERED" && (
+                    <button className="btn sm" disabled={busy} onClick={sync}>
+                      {busy ? "Syncing…" : "Sync tracking →"}
+                    </button>
+                  )}
+                  <div style={{ marginTop: 16 }}>
+                    {order.shipment.events.length === 0 ? (
+                      <p className="muted">No tracking updates yet.</p>
+                    ) : (
+                      order.shipment.events.map((e) => (
+                        <div key={e.id} className="kv">
+                          <dt>{e.status}{e.location ? ` · ${e.location}` : ""}</dt>
+                          <dd className="muted">{new Date(e.occurredAt).toLocaleString("en-IN")}</dd>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </>

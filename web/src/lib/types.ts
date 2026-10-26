@@ -79,6 +79,22 @@ export interface OrderPayment {
   currency: string;
 }
 
+export interface TrackingEvent {
+  id: string;
+  status: string;
+  location: string | null;
+  occurredAt: string;
+}
+
+export interface Shipment {
+  id: string;
+  courierName: string;
+  awb: string | null;
+  status: string;
+  trackingUrl: string | null;
+  events: TrackingEvent[];
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -92,6 +108,7 @@ export interface Order {
   placedAt: string;
   items: OrderItem[];
   payment?: OrderPayment | null;
+  shipment?: Shipment | null;
 }
 
 // Response from POST /api/checkout

@@ -59,7 +59,7 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
   return (
     <div className="admin-shell">
       <aside className="sidebar">
-        <span className="wordmark sidebar-brand">alorav<span className="sun">i</span>e</span>
+        <span className="wordmark sidebar-brand">alorav<span className="sun">{"ı"}</span>e</span>
         <nav className="nav">
           {NAV.map((item) => (
             <Link key={item.href} href={item.href} className={isActive(pathname, item.href) ? "active" : ""}>

@@ -1,0 +1,146 @@
+/* Aloravie storefront — global styles.
+   Brand tokens mirror shared/brand/tokens.css. Light = brand "On light";
+   dark = brand "Evening" (cocoa). */
+
+:root {
+  --terracotta: #C8714F;
+  --cream: #FFF8F0;
+  --cocoa: #3A2620;
+  --sand: #E9DCCB;
+  --clay: #8A5A44;
+
+  --bg: #FFF8F0;
+  --surface: #FFFCF8;
+  --panel: #E9DCCB;
+  --text: #3A2620;
+  --muted: #8A5A44;
+  --accent: #C8714F;
+  --on-accent: #FFF8F0;
+  --line: #E4D6C4;
+  --shadow: 0 1px 2px rgba(58, 38, 32, .06), 0 10px 28px rgba(58, 38, 32, .09);
+
+  --maxw: 1180px;
+  --radius: 4px;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #3A2620;
+    --surface: #43302A;
+    --panel: #4A332B;
+    --text: #FFF8F0;
+    --muted: #E9DCCB;
+    --accent: #D98363;
+    --on-accent: #2A1A15;
+    --line: #513A31;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .25), 0 12px 30px rgba(0, 0, 0, .35);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #3A2620;
+  --surface: #43302A;
+  --panel: #4A332B;
+  --text: #FFF8F0;
+  --muted: #E9DCCB;
+  --accent: #D98363;
+  --on-accent: #2A1A15;
+  --line: #513A31;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .25), 0 12px 30px rgba(0, 0, 0, .35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body { padding: 0; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-jost), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-weight: 300;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a { color: inherit; text-decoration: none; }
+
+main { flex: 1 0 auto; }
+
+img { max-width: 100%; display: block; }
+
+.container {
+  width: 100%;
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: max(20px, env(safe-area-inset-left, 0px)) max(20px, env(safe-area-inset-right, 0px));
+}
+
+h1, h2, h3 { text-wrap: balance; font-weight: 300; margin: 0; }
+
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* Buttons */
+.btn {
+  font: inherit;
+  font-weight: 400;
+  font-size: 14px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 13px 26px;
+  border-radius: 2px;
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--text);
+  transition: transform .12s ease, background .12s ease, color .12s ease, border-color .12s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { filter: brightness(1.04); }
+.btn.ghost { border-color: var(--line); }
+.btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Sun-dot wordmark */
+.wordmark {
+  font-weight: 500;
+  letter-spacing: -.01em;
+  text-transform: lowercase;
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1;
+  color: var(--accent);
+}
+.wordmark .sun { position: relative; }
+.wordmark .sun::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -0.52em;
+  width: 0.34em;
+  height: 0.34em;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffd9a8, var(--accent) 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; scroll-behavior: auto !important; }
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

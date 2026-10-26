@@ -1,0 +1,281 @@
+// Aloravie commerce platform — data model (Phase 0).
+// Money: all amounts are integer MINOR units (paise for INR) in a `*Minor` field,
+// always paired with a `currency` code. Never floats.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+// Staff / admin who operate the back office.
+enum UserRole {
+  OWNER
+  ADMIN
+  STAFF
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole @default(STAFF)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+// Rotating refresh tokens (stored hashed, revocable).
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// Shoppers on the storefront and marketplaces.
+model Customer {
+  id        String    @id @default(cuid())
+  email     String?   @unique
+  phone     String?   @unique
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  addresses Address[]
+  orders    Order[]
+
+  @@map("customers")
+}
+
+enum AddressType {
+  SHIPPING
+  BILLING
+}
+
+model Address {
+  id         String      @id @default(cuid())
+  customerId String
+  customer   Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type       AddressType @default(SHIPPING)
+  name       String
+  phone      String
+  line1      String
+  line2      String?
+  city       String
+  state      String
+  pincode    String
+  country    String      @default("IN")
+  isDefault  Boolean     @default(false)
+  createdAt  DateTime    @default(now())
+
+  @@index([customerId])
+  @@map("addresses")
+}
+
+// ---------------------------------------------------------------------------
+// Catalog
+// ---------------------------------------------------------------------------
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  parentId  String?
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryTree")
+  products  Product[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("categories")
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  description String?
+  status      ProductStatus @default(DRAFT)
+  categoryId  String?
+  category    Category?     @relation(fields: [categoryId], references: [id])
+  images      ProductImage[]
+  variants    ProductVariant[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String?
+  position  Int     @default(0)
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+// The sellable unit: carries SKU, price and the inventory link.
+model ProductVariant {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku        String   @unique
+  name       String   // e.g. "M / Terracotta"
+  priceMinor Int      // minor units (paise)
+  currency   String   @default("INR")
+  barcode    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  inventory  InventoryItem[]
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@map("product_variants")
+}
+
+// ---------------------------------------------------------------------------
+// Inventory
+// ---------------------------------------------------------------------------
+
+model Location {
+  id        String          @id @default(cuid())
+  name      String
+  code      String          @unique
+  isDefault Boolean         @default(false)
+  createdAt DateTime        @default(now())
+
+  inventory InventoryItem[]
+
+  @@map("locations")
+}
+
+// Stock of a variant at a location. `available = onHand - reserved`.
+model InventoryItem {
+  id         String         @id @default(cuid())
+  variantId  String
+  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  locationId String
+  location   Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  onHand     Int            @default(0)
+  reserved   Int            @default(0)
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([variantId, locationId])
+  @@index([variantId])
+  @@map("inventory_items")
+}
+
+// ---------------------------------------------------------------------------
+// Channels & orders
+// ---------------------------------------------------------------------------
+
+enum ChannelType {
+  WEB
+  AMAZON
+  FLIPKART
+  MYNTRA
+  MEESHO
+  AJIO
+  NYKAA
+}
+
+// A place orders come from. Marketplace orders flow through the same pipeline.
+model SalesChannel {
+  id        String      @id @default(cuid())
+  type      ChannelType
+  name      String
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+
+  orders Order[]
+
+  @@unique([type])
+  @@map("sales_channels")
+}
+
+enum OrderStatus {
+  PENDING       // created, awaiting payment
+  CONFIRMED     // paid / COD accepted
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+model Order {
+  id            String       @id @default(cuid())
+  orderNumber   String       @unique // human-facing, e.g. ALV-2026-00001
+  channelId     String
+  channel       SalesChannel @relation(fields: [channelId], references: [id])
+  customerId    String?
+  customer      Customer?    @relation(fields: [customerId], references: [id])
+  status        OrderStatus  @default(PENDING)
+
+  // Money (minor units)
+  currency      String       @default("INR")
+  subtotalMinor Int          @default(0)
+  shippingMinor Int          @default(0)
+  taxMinor      Int          @default(0)
+  discountMinor Int          @default(0)
+  totalMinor    Int          @default(0)
+
+  // External marketplace reference (null for WEB)
+  externalId    String?
+
+  placedAt      DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  items OrderItem[]
+
+  @@index([status])
+  @@index([channelId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id             String         @id @default(cuid())
+  orderId        String
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId      String
+  variant        ProductVariant @relation(fields: [variantId], references: [id])
+  titleSnapshot  String         // name at time of order
+  skuSnapshot    String
+  unitPriceMinor Int
+  quantity       Int
+  totalMinor     Int
+
+  @@index([orderId])
+  @@map("order_items")
+}

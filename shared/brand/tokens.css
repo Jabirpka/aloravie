@@ -1,0 +1,58 @@
+/* Aloravie brand design tokens — CSS custom properties.
+   Single source of truth for the web storefront and admin.
+   Generated from tokens.json; keep the two in step.
+   Light = brand "On light"; dark = brand "Evening" (cocoa). */
+
+:root {
+  /* Brand palette */
+  --aloravie-terracotta: #C8714F;
+  --aloravie-cream:      #FFF8F0;
+  --aloravie-cocoa:      #3A2620;
+  --aloravie-sand:       #E9DCCB;
+  --aloravie-clay:       #8A5A44;
+
+  /* Semantic — light */
+  --bg:        #FFF8F0;
+  --surface:   #FFFCF8;
+  --panel:     #E9DCCB;
+  --text:      #3A2620;
+  --muted:     #8A5A44;
+  --accent:    #C8714F;
+  --on-accent: #FFF8F0;
+  --line:      #E4D6C4;
+
+  /* Type */
+  --font-brand: "Jost", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fw-headline: 500;
+  --fw-label: 400;
+  --fw-body: 300;
+  --tracking-label: 0.06em;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:        #3A2620;
+    --surface:   #43302A;
+    --panel:     #4A332B;
+    --text:      #FFF8F0;
+    --muted:     #E9DCCB;
+    --accent:    #D98363;
+    --on-accent: #2A1A15;
+    --line:      #513A31;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg:        #3A2620;
+  --surface:   #43302A;
+  --panel:     #4A332B;
+  --text:      #FFF8F0;
+  --muted:     #E9DCCB;
+  --accent:    #D98363;
+  --on-accent: #2A1A15;
+  --line:      #513A31;
+  color-scheme: dark;
+}

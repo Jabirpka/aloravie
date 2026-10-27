@@ -4,6 +4,7 @@ import cors from "cors";
 import { pinoHttp } from "pino-http";
 import { env } from "./env.js";
 import { logger } from "./logger.js";
+import { UPLOADS_DIR } from "./lib/uploads.js";
 import { notFoundHandler, errorHandler } from "./middleware/error.js";
 import { healthRouter } from "./modules/health/health.routes.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
@@ -18,11 +19,13 @@ import { marketplaceRouter } from "./modules/marketplace/marketplace.routes.js";
 import { supportRouter } from "./modules/support/support.routes.js";
 import { supportAdminRouter } from "./modules/support/support.admin.routes.js";
 import { employeeRouter } from "./modules/employees/employees.routes.js";
+import { returnRouter } from "./modules/returns/returns.routes.js";
+import { returnAdminRouter } from "./modules/returns/returns.admin.routes.js";
 
 export function createApp(): Express {
   const app = express();
 
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
   app.use(
     cors({
       origin: env.corsOrigins,
@@ -30,6 +33,9 @@ export function createApp(): Express {
     }),
   );
   app.use(express.json({ limit: "1mb" }));
+
+  // Uploaded images (return photos, etc.), served for the storefront and admin.
+  app.use("/uploads", express.static(UPLOADS_DIR));
   app.use(pinoHttp({ logger }));
 
   // Routes
@@ -45,7 +51,9 @@ export function createApp(): Express {
   app.use("/api/admin", marketplaceRouter);
   app.use("/api/admin", supportAdminRouter);
   app.use("/api/admin", employeeRouter);
+  app.use("/api/admin", returnAdminRouter);
   app.use("/api/support", supportRouter);
+  app.use("/api/returns", returnRouter);
 
   // Fallbacks
   app.use(notFoundHandler);

@@ -10,6 +10,7 @@ import type {
   Employee,
   NotificationLogRow,
   OrderDetail,
+  ReturnRecord,
   SupportConversationDetail,
   SupportConversationRow,
   OrderRow,
@@ -302,6 +303,32 @@ export async function updateEmployee(
   return ((await apiFetch(`/api/admin/employees/${id}`, { method: "PATCH", body: JSON.stringify(input) })) as {
     employee: Employee;
   }).employee;
+}
+
+// --- Returns ---
+
+export function assetUrl(p: string): string {
+  return p.startsWith("http") ? p : `${API_URL}${p}`;
+}
+
+export async function listReturns(status?: ReturnRecord["status"]): Promise<ReturnRecord[]> {
+  const qs = status ? `?status=${status}` : "";
+  return ((await apiFetch(`/api/admin/returns${qs}`)) as { returns: ReturnRecord[] }).returns;
+}
+
+export async function getReturn(id: string): Promise<ReturnRecord> {
+  return ((await apiFetch(`/api/admin/returns/${id}`)) as { return: ReturnRecord }).return;
+}
+
+export async function decideReturn(
+  id: string,
+  action: "approve" | "reject" | "refund",
+  note?: string,
+): Promise<ReturnRecord> {
+  return ((await apiFetch(`/api/admin/returns/${id}/${action}`, {
+    method: "POST",
+    body: note ? JSON.stringify({ note }) : undefined,
+  })) as { return: ReturnRecord }).return;
 }
 
 export type DocumentKind = "invoice" | "delivery-note" | "label";

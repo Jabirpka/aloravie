@@ -79,6 +79,28 @@ export interface AddressInput {
   country?: string;
 }
 
+export interface Address extends AddressInput {
+  id: string;
+  type: "SHIPPING" | "BILLING";
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export type ReturnReason = "WRONG_SIZE" | "DAMAGED" | "NOT_AS_DESCRIBED" | "CHANGED_MIND" | "OTHER";
+export type ReturnStatus = "REQUESTED" | "APPROVED" | "REJECTED" | "REFUNDED";
+
+export interface ReturnRequest {
+  id: string;
+  status: ReturnStatus;
+  reason: ReturnReason;
+  comment: string | null;
+  photoUrls: string[];
+  items: { orderItemId: string; titleSnapshot: string; skuSnapshot: string; quantity: number; unitPriceMinor: number }[];
+  refundAmountMinor: number | null;
+  createdAt: string;
+  order?: { orderNumber: string; currency: string } | null;
+}
+
 export interface OrderItem {
   id: string;
   titleSnapshot: string;

@@ -178,6 +178,10 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 .dept-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
 .dept-check input { width: auto; }
 
+/* Return photos */
+.return-photos { display: flex; flex-wrap: wrap; gap: 10px; }
+.return-photos img { width: 92px; height: 92px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); }
+
 /* Support chat (admin) */
 .admin-chat { display: flex; flex-direction: column; gap: 10px; max-height: 52vh; overflow-y: auto; }
 .abubble { max-width: 76%; padding: 9px 13px; border-radius: 10px; font-size: 14px; }

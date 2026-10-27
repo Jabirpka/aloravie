@@ -510,6 +510,25 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .chat-input { display: flex; gap: 10px; }
 .chat-input input { flex: 1; }
 
+/* ---------------- Addresses & returns ---------------- */
+.address-list { display: flex; flex-direction: column; gap: 12px; }
+.address-card { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; font-size: 14px; line-height: 1.6; }
+.addr-picker { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.addr-option { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; font-size: 14px; }
+.addr-option.sel { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.return-items { display: flex; flex-direction: column; gap: 10px; }
+.return-item { display: flex; justify-content: space-between; align-items: center; gap: 16px; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.return-item select, .return-reason { font: inherit; padding: 8px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--text); }
+.return-reason { width: 100%; max-width: 320px; }
+.returns-list { display: flex; flex-direction: column; gap: 12px; }
+.return-row { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.return-row-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.return-row-items { font-size: 13.5px; }
+.status-pill.status-requested { color: var(--clay); border-color: color-mix(in srgb, var(--clay) 40%, transparent); }
+.status-pill.status-approved { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.status-pill.status-refunded { color: #2f7d4f; border-color: color-mix(in srgb, #2f7d4f 40%, transparent); background: color-mix(in srgb, #2f7d4f 12%, transparent); }
+.status-pill.status-rejected { color: #b23b2e; border-color: color-mix(in srgb, #b23b2e 35%, transparent); }
+
 /* ---------------- Order tracking ---------------- */
 .strong { font-weight: 500; }
 .tracking { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 24px; }

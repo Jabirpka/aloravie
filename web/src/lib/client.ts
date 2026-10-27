@@ -1,11 +1,13 @@
 // Browser-side API client for authenticated customer actions (account, checkout, orders).
 // Tokens live in localStorage; a 401 triggers a single refresh-and-retry.
 import type {
+  Address,
   AddressInput,
   CartLine,
   CheckoutResponse,
   CustomerAccount,
   Order,
+  ReturnRequest,
   SupportConversation,
 } from "./types";
 
@@ -164,13 +166,12 @@ export async function logoutCustomer(): Promise<void> {
 
 export async function createCheckout(
   lines: CartLine[],
-  shippingAddress: AddressInput,
-  email?: string,
+  opts: { shippingAddressId?: string; shippingAddress?: AddressInput; email?: string },
 ): Promise<CheckoutResponse> {
   const items = lines.map((l) => ({ variantId: l.variantId, quantity: l.quantity }));
   return (await rawFetch(
     "/api/checkout",
-    { method: "POST", body: JSON.stringify({ items, shippingAddress, email }) },
+    { method: "POST", body: JSON.stringify({ items, ...opts }) },
     true,
   )) as CheckoutResponse;
 }
@@ -239,4 +240,46 @@ export async function sendMessage(id: string, message: string): Promise<SupportC
     body: JSON.stringify({ body: message }),
   }, true)) as { conversation: SupportConversation };
   return body.conversation;
+}
+
+// --- Saved addresses ---
+
+export async function listAddresses(): Promise<Address[]> {
+  const body = (await rawFetch("/api/customers/me/addresses", {}, true)) as { addresses: Address[] };
+  return body.addresses;
+}
+
+export async function createAddress(input: AddressInput & { isDefault?: boolean }): Promise<Address> {
+  const body = (await rawFetch("/api/customers/me/addresses", {
+    method: "POST",
+    body: JSON.stringify(input),
+  }, true)) as { address: Address };
+  return body.address;
+}
+
+export async function deleteAddress(id: string): Promise<void> {
+  await rawFetch(`/api/customers/me/addresses/${id}`, { method: "DELETE" }, true);
+}
+
+// --- Returns ---
+
+export async function listReturns(): Promise<ReturnRequest[]> {
+  const body = (await rawFetch("/api/returns", {}, true)) as { returns: ReturnRequest[] };
+  return body.returns;
+}
+
+// Multipart create (photos upload in the same request). Handles one refresh retry.
+export async function createReturn(form: FormData): Promise<ReturnRequest> {
+  async function attempt(): Promise<Response> {
+    const headers = new Headers();
+    const token = getAccessToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return fetch(`${API_URL}/api/returns`, { method: "POST", headers, body: form });
+  }
+  let res = await attempt();
+  if (res.status === 401) {
+    const refreshed = await tryRefresh();
+    if (refreshed) res = await attempt();
+  }
+  return (await parse(res) as { return: ReturnRequest }).return;
 }

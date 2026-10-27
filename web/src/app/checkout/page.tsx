@@ -2,12 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useCart } from "@/components/CartProvider";
 import { formatMoney } from "@/lib/money";
-import type { AddressInput } from "@/lib/types";
-import { ApiRequestError, confirmMockPayment, createCheckout, verifyRazorpayPayment } from "@/lib/client";
+import type { Address, AddressInput } from "@/lib/types";
+import {
+  ApiRequestError,
+  confirmMockPayment,
+  createCheckout,
+  listAddresses,
+  verifyRazorpayPayment,
+} from "@/lib/client";
 
 interface RazorpayHandlerResponse {
   razorpay_payment_id: string;
@@ -62,6 +68,21 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState<Address[]>([]);
+  const [selected, setSelected] = useState<string>("new"); // address id or "new"
+
+  useEffect(() => {
+    if (loading || !customer) return;
+    listAddresses()
+      .then((list) => {
+        setSaved(list);
+        const def = list.find((a) => a.isDefault) ?? list[0];
+        if (def) setSelected(def.id);
+      })
+      .catch(() => {
+        /* ignore */
+      });
+  }, [customer, loading]);
 
   const taxMinor = useMemo(
     () => lines.reduce((sum, l) => sum + Math.round(l.priceMinor * l.quantity * gstFor(l.priceMinor)), 0),
@@ -79,7 +100,15 @@ export default function CheckoutPage() {
     setError(null);
     setBusy(true);
     try {
-      const res = await createCheckout(lines, address, email || undefined);
+      const chosen = selected !== "new" ? saved.find((a) => a.id === selected) : undefined;
+      const res = await createCheckout(
+        lines,
+        chosen
+          ? { shippingAddressId: chosen.id, email: email || undefined }
+          : { shippingAddress: address, email: email || undefined },
+      );
+      const contactName = chosen?.name ?? address.name;
+      const contactPhone = chosen?.phone ?? address.phone;
 
       if (res.payment.provider === "MOCK") {
         const order = await confirmMockPayment(res.order.id);
@@ -98,7 +127,7 @@ export default function CheckoutPage() {
         order_id: res.payment.providerOrderId,
         name: "Aloravie",
         description: `Order ${res.order.orderNumber}`,
-        prefill: { name: address.name, email, contact: address.phone },
+        prefill: { name: contactName, email, contact: contactPhone },
         theme: { color: "#C8714F" },
         handler: async (r: RazorpayHandlerResponse) => {
           try {
@@ -157,32 +186,52 @@ export default function CheckoutPage() {
       <div className="checkout-grid">
         <form className="checkout-form" onSubmit={placeOrder}>
           <h2 className="checkout-sub">Shipping address</h2>
-          <div className="field-grid">
-            <label className="full"><span>Full name</span>
-              <input value={address.name} onChange={(e) => update("name", e.target.value)} required autoComplete="name" />
-            </label>
-            <label><span>Phone</span>
-              <input value={address.phone} onChange={(e) => update("phone", e.target.value)} required autoComplete="tel" />
-            </label>
-            <label><span>Email (optional)</span>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
-            </label>
-            <label className="full"><span>Address line 1</span>
-              <input value={address.line1} onChange={(e) => update("line1", e.target.value)} required autoComplete="address-line1" />
-            </label>
-            <label className="full"><span>Address line 2 (optional)</span>
-              <input value={address.line2} onChange={(e) => update("line2", e.target.value)} autoComplete="address-line2" />
-            </label>
-            <label><span>City</span>
-              <input value={address.city} onChange={(e) => update("city", e.target.value)} required autoComplete="address-level2" />
-            </label>
-            <label><span>State</span>
-              <input value={address.state} onChange={(e) => update("state", e.target.value)} required autoComplete="address-level1" />
-            </label>
-            <label><span>PIN code</span>
-              <input value={address.pincode} onChange={(e) => update("pincode", e.target.value)} required inputMode="numeric" pattern="\d{6}" title="6-digit PIN code" autoComplete="postal-code" />
-            </label>
-          </div>
+
+          {saved.length > 0 && (
+            <div className="addr-picker">
+              {saved.map((a) => (
+                <label key={a.id} className={`addr-option ${selected === a.id ? "sel" : ""}`}>
+                  <input type="radio" name="addr" checked={selected === a.id} onChange={() => setSelected(a.id)} />
+                  <span><span className="strong">{a.name}</span> — {a.line1}, {a.city}, {a.state} {a.pincode}</span>
+                </label>
+              ))}
+              <label className={`addr-option ${selected === "new" ? "sel" : ""}`}>
+                <input type="radio" name="addr" checked={selected === "new"} onChange={() => setSelected("new")} />
+                <span>Use a new address</span>
+              </label>
+            </div>
+          )}
+
+          {selected === "new" && (
+            <div className="field-grid">
+              <label className="full"><span>Full name</span>
+                <input value={address.name} onChange={(e) => update("name", e.target.value)} required autoComplete="name" />
+              </label>
+              <label><span>Phone</span>
+                <input value={address.phone} onChange={(e) => update("phone", e.target.value)} required autoComplete="tel" />
+              </label>
+              <label className="full"><span>Address line 1</span>
+                <input value={address.line1} onChange={(e) => update("line1", e.target.value)} required autoComplete="address-line1" />
+              </label>
+              <label className="full"><span>Address line 2 (optional)</span>
+                <input value={address.line2} onChange={(e) => update("line2", e.target.value)} autoComplete="address-line2" />
+              </label>
+              <label><span>City</span>
+                <input value={address.city} onChange={(e) => update("city", e.target.value)} required autoComplete="address-level2" />
+              </label>
+              <label><span>State</span>
+                <input value={address.state} onChange={(e) => update("state", e.target.value)} required autoComplete="address-level1" />
+              </label>
+              <label><span>PIN code</span>
+                <input value={address.pincode} onChange={(e) => update("pincode", e.target.value)} required inputMode="numeric" pattern="\d{6}" title="6-digit PIN code" autoComplete="postal-code" />
+              </label>
+            </div>
+          )}
+
+          <label className="full" style={{ display: "block", marginTop: 12 }}>
+            <span className="muted" style={{ fontSize: 13 }}>Email for updates (optional)</span>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" style={{ width: "100%", marginTop: 6, padding: "11px 13px", border: "1px solid var(--line)", borderRadius: 4, background: "var(--bg)", color: "var(--text)" }} />
+          </label>
 
           {error && <p className="form-error">{error}</p>}
 

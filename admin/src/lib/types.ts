@@ -257,6 +257,29 @@ export interface NotificationLogRow {
   createdAt: string;
 }
 
+export interface ReturnItemSnapshot {
+  orderItemId: string;
+  titleSnapshot: string;
+  skuSnapshot: string;
+  variantId: string;
+  unitPriceMinor: number;
+  quantity: number;
+}
+
+export interface ReturnRecord {
+  id: string;
+  status: "REQUESTED" | "APPROVED" | "REJECTED" | "REFUNDED";
+  reason: "WRONG_SIZE" | "DAMAGED" | "NOT_AS_DESCRIBED" | "CHANGED_MIND" | "OTHER";
+  comment: string | null;
+  staffNote: string | null;
+  photoUrls: string[];
+  items: ReturnItemSnapshot[];
+  refundAmountMinor: number | null;
+  createdAt: string;
+  order: { orderNumber: string; currency: string; placedAt: string } | null;
+  customer: { id: string; name: string | null; email: string | null } | null;
+}
+
 export interface AdminProduct {
   id: string;
   title: string;

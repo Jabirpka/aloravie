@@ -118,6 +118,9 @@ export default function OrderPage() {
 
         <div className="order-actions">
           <Link href="/account/orders" className="btn ghost">My orders</Link>
+          {["CONFIRMED", "PACKED", "SHIPPED", "DELIVERED"].includes(order.status) && (
+            <Link href={`/return/new?order=${order.orderNumber}`} className="btn ghost">Request a return</Link>
+          )}
           <Link href="/shop" className="btn primary">Continue shopping</Link>
         </div>
       </div>

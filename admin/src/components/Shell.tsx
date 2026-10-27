@@ -9,6 +9,7 @@ import { canAccess, type Feature } from "@/lib/access";
 const NAV: { href: string; label: string; feature: Feature }[] = [
   { href: "/", label: "Dashboard", feature: "dashboard" },
   { href: "/orders", label: "Orders", feature: "orders.view" },
+  { href: "/returns", label: "Returns", feature: "returns" },
   { href: "/inventory", label: "Inventory", feature: "inventory" },
   { href: "/products", label: "Products", feature: "catalog" },
   { href: "/channels", label: "Channels", feature: "channels" },

@@ -77,7 +77,9 @@ The back office runs on `http://localhost:3001`. Sign in with a staff account �
 
 6. In the back office **Channels**: connect a marketplace (Amazon/Flipkart/Myntra/Meesho) → it lists your active catalogue → **Push stock** sends one shared pool → **Pull orders** imports marketplace orders into the same pipeline (in `MARKETPLACE_MODE=mock`, sample orders are generated so you can see it work).
 
-For real payments set `PAYMENT_MODE=razorpay` and add `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` (Razorpay test keys work end to end). For real couriers set `COURIER_MODE=shiprocket` with the `SHIPROCKET_*` vars, and fill in `SELLER_*` (name, GSTIN, address) for the printed documents. For real marketplace sync set `MARKETPLACE_MODE=live` and implement each channel's connector with its seller credentials — all in `backend/.env`.
+7. Engagement: order events raise **notifications** (logged in the admin's Notifications page in mock mode); customers can **chat with support** (the "Chat with us" button) and staff reply from the admin **Support** inbox; the Aurora Cotton Kurta product page shows an interactive **3D model**.
+
+For real payments set `PAYMENT_MODE=razorpay` and add `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` (Razorpay test keys work end to end). For real couriers set `COURIER_MODE=shiprocket` with the `SHIPROCKET_*` vars, and fill in `SELLER_*` (name, GSTIN, address) for the printed documents. For real marketplace sync set `MARKETPLACE_MODE=live` and implement each channel's connector with its seller credentials. For real notifications set `NOTIFY_MODE=live` with `SENDGRID_API_KEY` (email) and `TWILIO_*` (SMS/WhatsApp) — all in `backend/.env`.
 
 ## Conventions
 

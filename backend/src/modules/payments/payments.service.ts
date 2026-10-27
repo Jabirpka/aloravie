@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { prisma } from "../../prisma.js";
 import { env } from "../../env.js";
 import { AppError, badRequest, forbidden, notFound, unauthorized } from "../../lib/http.js";
+import { notifyOrderEvent } from "../notifications/notifications.service.js";
 
 const RZP_API = "https://api.razorpay.com/v1";
 
@@ -43,12 +44,12 @@ function verifyRazorpaySignature(orderId: string, paymentId: string, signature: 
 }
 
 // Mark an order paid: commit reserved stock, set payment PAID and order CONFIRMED.
-// Idempotent: a non-PENDING order is returned unchanged.
+// Idempotent: a non-PENDING order is returned unchanged and sends no notification.
 async function markOrderPaid(orderId: string, providerPaymentId: string | null) {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true, payment: true } });
     if (!order) throw notFound("Order not found");
-    if (order.status !== "PENDING") return order;
+    if (order.status !== "PENDING") return { order, transitioned: false };
 
     let location = await tx.location.findFirst({ where: { isDefault: true } });
     if (!location) location = await tx.location.findFirst();
@@ -61,12 +62,16 @@ async function markOrderPaid(orderId: string, providerPaymentId: string | null) 
       }
     }
     await tx.payment.update({ where: { orderId }, data: { status: "PAID", providerPaymentId } });
-    return tx.order.update({
+    const updated = await tx.order.update({
       where: { id: orderId },
       data: { status: "CONFIRMED" },
       include: { items: true, payment: true },
     });
+    return { order: updated, transitioned: true };
   });
+
+  if (result.transitioned) await notifyOrderEvent(orderId, "ORDER_CONFIRMED");
+  return result.order;
 }
 
 async function loadOwnedOrder(customerId: string, orderId: string) {

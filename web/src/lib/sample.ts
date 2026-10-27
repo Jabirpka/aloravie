@@ -23,6 +23,8 @@ export const SAMPLE_PRODUCTS: Product[] = [
     status: "ACTIVE",
     category: KURTAS,
     images: [],
+    // Placeholder 3D model to demonstrate the viewer; replace with the garment's own GLB.
+    model3dUrl: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
     variants: [
       { id: "v-aurora-s", sku: "ALV-AURORA-S", name: "S / Terracotta", priceMinor: 189000, currency: "INR" },
       { id: "v-aurora-m", sku: "ALV-AURORA-M", name: "M / Terracotta", priceMinor: 189000, currency: "INR" },

@@ -6,7 +6,10 @@ import type {
   InventoryRow,
   ChannelDetail,
   ChannelRow,
+  NotificationLogRow,
   OrderDetail,
+  SupportConversationDetail,
+  SupportConversationRow,
   OrderRow,
   OrderStatus,
   ProductStatus,
@@ -233,6 +236,37 @@ export async function pullChannelOrders(id: string): Promise<{ created: number; 
     created: number;
     skipped: number;
   };
+}
+
+// --- Support & notifications ---
+
+export async function listSupport(status?: "OPEN" | "CLOSED"): Promise<SupportConversationRow[]> {
+  const qs = status ? `?status=${status}` : "";
+  return ((await apiFetch(`/api/admin/support${qs}`)) as { conversations: SupportConversationRow[] }).conversations;
+}
+
+export async function getSupport(id: string): Promise<SupportConversationDetail> {
+  return ((await apiFetch(`/api/admin/support/${id}`)) as { conversation: SupportConversationDetail }).conversation;
+}
+
+export async function replySupport(id: string, body: string): Promise<SupportConversationDetail> {
+  return (
+    (await apiFetch(`/api/admin/support/${id}/reply`, { method: "POST", body: JSON.stringify({ body }) })) as {
+      conversation: SupportConversationDetail;
+    }
+  ).conversation;
+}
+
+export async function closeSupport(id: string): Promise<SupportConversationDetail> {
+  return (
+    (await apiFetch(`/api/admin/support/${id}/close`, { method: "POST" })) as {
+      conversation: SupportConversationDetail;
+    }
+  ).conversation;
+}
+
+export async function listNotifications(): Promise<NotificationLogRow[]> {
+  return ((await apiFetch("/api/admin/notifications")) as { notifications: NotificationLogRow[] }).notifications;
 }
 
 export type DocumentKind = "invoice" | "delivery-note" | "label";

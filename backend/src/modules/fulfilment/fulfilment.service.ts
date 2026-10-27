@@ -8,6 +8,7 @@ import {
   type BookingInput,
 } from "./courier.service.js";
 import type { DocAddress } from "./documents.js";
+import { notifyOrderEvent } from "../notifications/notifications.service.js";
 
 const shipmentInclude = { events: { orderBy: { occurredAt: "asc" } } } as const;
 
@@ -30,8 +31,8 @@ export async function createShipment(orderId: string) {
   const result =
     courierMode() === "shiprocket" ? await bookShiprocketShipment(booking) : bookMockShipment(booking);
 
-  return prisma.$transaction(async (tx) => {
-    const shipment = await tx.shipment.create({
+  const shipment = await prisma.$transaction(async (tx) => {
+    const created = await tx.shipment.create({
       data: {
         orderId,
         provider: result.provider,
@@ -45,8 +46,11 @@ export async function createShipment(orderId: string) {
       include: shipmentInclude,
     });
     await tx.order.update({ where: { id: orderId }, data: { status: "SHIPPED" } });
-    return shipment;
+    return created;
   });
+
+  await notifyOrderEvent(orderId, "ORDER_SHIPPED");
+  return shipment;
 }
 
 // Advance tracking. Mock mode steps the timeline one stage per call; when the
@@ -66,7 +70,7 @@ export async function syncTracking(shipmentId: string) {
   const update = nextMockUpdate(shipment.status);
   if (!update) return prisma.shipment.findUniqueOrThrow({ where: { id: shipmentId }, include: shipmentInclude });
 
-  return prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     await tx.trackingEvent.create({
       data: {
         shipmentId,
@@ -75,7 +79,7 @@ export async function syncTracking(shipmentId: string) {
         occurredAt: update.occurredAt,
       },
     });
-    const updated = await tx.shipment.update({
+    const shp = await tx.shipment.update({
       where: { id: shipmentId },
       data: { status: update.status },
       include: shipmentInclude,
@@ -83,6 +87,9 @@ export async function syncTracking(shipmentId: string) {
     if (update.status === "DELIVERED") {
       await tx.order.update({ where: { id: shipment.orderId }, data: { status: "DELIVERED" } });
     }
-    return updated;
+    return shp;
   });
+
+  if (update.status === "DELIVERED") await notifyOrderEvent(shipment.orderId, "ORDER_DELIVERED");
+  return updated;
 }

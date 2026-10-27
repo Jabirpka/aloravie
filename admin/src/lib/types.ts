@@ -207,6 +207,43 @@ export interface ChannelDetail {
   _count: { orders: number };
 }
 
+export interface SupportMessage {
+  id: string;
+  sender: "CUSTOMER" | "STAFF" | "SYSTEM";
+  body: string;
+  createdAt: string;
+}
+
+export interface SupportConversationRow {
+  id: string;
+  subject: string;
+  status: "OPEN" | "CLOSED";
+  lastMessageAt: string;
+  customer: { id: string; name: string | null; email: string | null } | null;
+  _count: { messages: number };
+}
+
+export interface SupportConversationDetail {
+  id: string;
+  subject: string;
+  status: "OPEN" | "CLOSED";
+  lastMessageAt: string;
+  customer: { id: string; name: string | null; email: string | null; phone: string | null } | null;
+  messages: SupportMessage[];
+}
+
+export interface NotificationLogRow {
+  id: string;
+  channel: "EMAIL" | "SMS" | "WHATSAPP";
+  event: string;
+  recipient: string;
+  subject: string | null;
+  body: string;
+  status: "SENT" | "FAILED" | "SKIPPED";
+  orderId: string | null;
+  createdAt: string;
+}
+
 export interface AdminProduct {
   id: string;
   title: string;

@@ -12,6 +12,8 @@ const NAV = [
   { href: "/products", label: "Products" },
   { href: "/channels", label: "Channels" },
   { href: "/customers", label: "Customers" },
+  { href: "/support", label: "Support" },
+  { href: "/notifications", label: "Notifications" },
 ];
 
 function isActive(pathname: string, href: string): boolean {

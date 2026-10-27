@@ -36,6 +36,12 @@ Two distinct identities:
 
 Catalog: `Category` → `Product` → `ProductVariant` (the sellable unit, carries SKU + price). Stock is `InventoryItem` (variant × location). Selling happens on a `SalesChannel` (WEB, marketplaces). Orders (`Order` → `OrderItem`) reference the channel they came from, so marketplace orders flow through the same pipeline.
 
+## Engagement (Phase 7)
+
+- **Notifications** (`backend/src/modules/notifications/`): `notifyOrderEvent(orderId, event)` and `notifySupportReply(customer)` fan out across the channels we can reach (email always; WhatsApp + SMS when a phone is on file), using per-event templates. `NOTIFY_MODE=mock` logs and records without sending; `live` calls SendGrid (email) and Twilio (SMS/WhatsApp), marking each attempt SENT/SKIPPED/FAILED. Every attempt is written to `NotificationLog`. Hooked into payment confirmation (ORDER_CONFIRMED), shipment booking (ORDER_SHIPPED) and delivery (ORDER_DELIVERED); never throws, so it can't break the order flow.
+- **Support chat** (`backend/src/modules/support/`): `SupportConversation` + `SupportMessage`. Customers (signed in) start and continue conversations; staff reply and close from the admin. The storefront and admin both **poll** for new messages (simple and infra-free; websockets are a later upgrade). A staff reply triggers a SUPPORT_REPLY notification.
+- **3D catalogue**: `Product.model3dUrl` holds a glTF/GLB; the web product page renders Google's `<model-viewer>` (loaded from jsDelivr) with camera controls and AR. Seeded with a placeholder model; real per-garment models drop in later.
+
 ## Mobile apps (Phase 6)
 
 - **Flutter** app in `mobile/` for Android + iOS, sharing the same backend API as the web store. State via `provider` (CartModel + AuthModel), networking via `http`, tokens in `SharedPreferences`, Jost via `google_fonts`, same light/Evening brand theme (`lib/theme.dart`).

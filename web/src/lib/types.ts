@@ -27,9 +27,25 @@ export interface Product {
   slug: string;
   description: string | null;
   status: "DRAFT" | "ACTIVE" | "ARCHIVED";
+  model3dUrl?: string | null;
   category: Category | null;
   images: ProductImage[];
   variants: ProductVariant[];
+}
+
+export interface SupportMessage {
+  id: string;
+  sender: "CUSTOMER" | "STAFF" | "SYSTEM";
+  body: string;
+  createdAt: string;
+}
+
+export interface SupportConversation {
+  id: string;
+  subject: string;
+  status: "OPEN" | "CLOSED";
+  lastMessageAt: string;
+  messages: SupportMessage[];
 }
 
 // A line in the shopping bag (client-side).

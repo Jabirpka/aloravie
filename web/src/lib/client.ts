@@ -1,6 +1,13 @@
 // Browser-side API client for authenticated customer actions (account, checkout, orders).
 // Tokens live in localStorage; a 401 triggers a single refresh-and-retry.
-import type { AddressInput, CartLine, CheckoutResponse, CustomerAccount, Order } from "./types";
+import type {
+  AddressInput,
+  CartLine,
+  CheckoutResponse,
+  CustomerAccount,
+  Order,
+  SupportConversation,
+} from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -200,4 +207,36 @@ export async function getOrder(orderNumber: string): Promise<Order> {
     order: Order;
   };
   return body.order;
+}
+
+// --- Support chat ---
+
+export async function listConversations(): Promise<SupportConversation[]> {
+  const body = (await rawFetch("/api/support/conversations", {}, true)) as {
+    conversations: SupportConversation[];
+  };
+  return body.conversations;
+}
+
+export async function getConversation(id: string): Promise<SupportConversation> {
+  const body = (await rawFetch(`/api/support/conversations/${id}`, {}, true)) as {
+    conversation: SupportConversation;
+  };
+  return body.conversation;
+}
+
+export async function startConversation(subject: string, message: string): Promise<SupportConversation> {
+  const body = (await rawFetch("/api/support/conversations", {
+    method: "POST",
+    body: JSON.stringify({ subject, body: message }),
+  }, true)) as { conversation: SupportConversation };
+  return body.conversation;
+}
+
+export async function sendMessage(id: string, message: string): Promise<SupportConversation> {
+  const body = (await rawFetch(`/api/support/conversations/${id}/messages`, {
+    method: "POST",
+    body: JSON.stringify({ body: message }),
+  }, true)) as { conversation: SupportConversation };
+  return body.conversation;
 }

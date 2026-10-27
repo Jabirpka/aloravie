@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProduct } from "@/lib/api";
 import { AddToBag } from "@/components/AddToBag";
+import { Product3DViewer } from "@/components/Product3DViewer";
 import { toneForSlug } from "@/lib/placeholder";
 
 export async function generateMetadata({
@@ -41,9 +42,16 @@ export default async function ProductPage({ params }: { params: { slug: string }
       <div className="pdp">
         <div
           className="pdp-image"
-          style={firstImage ? undefined : { background: toneForSlug(product.slug) }}
+          style={product.model3dUrl || firstImage ? undefined : { background: toneForSlug(product.slug) }}
         >
-          {firstImage && <img src={firstImage.url} alt={firstImage.alt ?? product.title} />}
+          {product.model3dUrl ? (
+            <>
+              <span className="badge-3d">3D · drag to rotate</span>
+              <Product3DViewer src={product.model3dUrl} alt={product.title} />
+            </>
+          ) : (
+            firstImage && <img src={firstImage.url} alt={firstImage.alt ?? product.title} />
+          )}
         </div>
 
         <div className="pdp-info">

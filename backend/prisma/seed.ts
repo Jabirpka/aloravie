@@ -48,6 +48,8 @@ async function main() {
       description: "Hand block-print cotton kurta in terracotta. Made for slow mornings.",
       categoryId: kurtas.id,
       status: "ACTIVE" as const,
+      // Placeholder 3D model to demo the viewer; swap for the garment's own GLB.
+      model3dUrl: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
       variants: [
         { sku: "ALV-AURORA-S", name: "S / Terracotta", priceMinor: 189000 },
         { sku: "ALV-AURORA-M", name: "M / Terracotta", priceMinor: 189000 },
@@ -68,15 +70,17 @@ async function main() {
   ];
 
   for (const p of products) {
+    const model3dUrl = (p as { model3dUrl?: string }).model3dUrl;
     const product = await prisma.product.upsert({
       where: { slug: p.slug },
-      update: { title: p.title, description: p.description, status: p.status, categoryId: p.categoryId },
+      update: { title: p.title, description: p.description, status: p.status, categoryId: p.categoryId, model3dUrl },
       create: {
         title: p.title,
         slug: p.slug,
         description: p.description,
         status: p.status,
         categoryId: p.categoryId,
+        model3dUrl,
         variants: { create: p.variants },
       },
       include: { variants: true },

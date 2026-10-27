@@ -61,9 +61,10 @@ model Customer {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  addresses     Address[]
-  orders        Order[]
-  refreshTokens CustomerRefreshToken[]
+  addresses             Address[]
+  orders                Order[]
+  refreshTokens         CustomerRefreshToken[]
+  supportConversations  SupportConversation[]
 
   @@map("customers")
 }
@@ -137,6 +138,7 @@ model Product {
   slug        String        @unique
   description String?
   status      ProductStatus @default(DRAFT)
+  model3dUrl  String? // glTF/GLB model for the 3D catalogue viewer
   categoryId  String?
   category    Category?     @relation(fields: [categoryId], references: [id])
   images      ProductImage[]
@@ -438,4 +440,84 @@ model TrackingEvent {
 
   @@index([shipmentId])
   @@map("tracking_events")
+}
+
+// ---------------------------------------------------------------------------
+// Engagement: notifications & support (Phase 7)
+// ---------------------------------------------------------------------------
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  WHATSAPP
+}
+
+enum NotificationEvent {
+  ORDER_CONFIRMED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  SUPPORT_REPLY
+}
+
+enum NotificationStatus {
+  SENT
+  FAILED
+  SKIPPED
+}
+
+// A record of every notification attempt (for admin visibility + auditing).
+model NotificationLog {
+  id        String              @id @default(cuid())
+  channel   NotificationChannel
+  event     NotificationEvent
+  recipient String
+  subject   String?
+  body      String
+  status    NotificationStatus  @default(SENT)
+  orderId   String?
+  createdAt DateTime            @default(now())
+
+  @@index([createdAt])
+  @@map("notification_logs")
+}
+
+enum SupportStatus {
+  OPEN
+  CLOSED
+}
+
+enum MessageSender {
+  CUSTOMER
+  STAFF
+  SYSTEM
+}
+
+model SupportConversation {
+  id            String        @id @default(cuid())
+  customerId    String?
+  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  subject       String
+  status        SupportStatus @default(OPEN)
+  guestName     String? // for not-signed-in visitors
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  lastMessageAt DateTime      @default(now())
+
+  messages SupportMessage[]
+
+  @@index([status])
+  @@index([customerId])
+  @@map("support_conversations")
+}
+
+model SupportMessage {
+  id             String              @id @default(cuid())
+  conversationId String
+  conversation   SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         MessageSender
+  body           String
+  createdAt      DateTime            @default(now())
+
+  @@index([conversationId])
+  @@map("support_messages")
 }

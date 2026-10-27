@@ -74,10 +74,16 @@ Flutter app in `mobile/` (Android + iOS), same backend API + brand (light + Even
 - Setup: `flutter create .` (generates android/ios) → `flutter pub get` → `flutter run`
 - Later: native Razorpay (razorpay_flutter), FCM wiring, product images, deep links
 
-## Phase 7 — Engagement ⬜
-- Live chat / customer support
-- Notifications: WhatsApp, email, SMS (order, shipping, marketing)
-- **3D product catalogue** (interactive product views)
+## Phase 7 — Engagement ✅ (core)
+- ✅ **Notifications** (email / SMS / WhatsApp): sent on order confirmed / shipped / delivered and on support replies; `NOTIFY_MODE` mock (logged) or live (SendGrid + Twilio); every send recorded in a notification log the admin can see
+- ✅ **Live chat / support**: customers start conversations and chat (polling) from the storefront; staff reply and close from an admin inbox; a reply notifies the customer
+- ✅ **3D product catalogue**: `<model-viewer>` on the product page when a product has a `model3dUrl` (drag to rotate, AR on supported devices); seeded with a placeholder model
+- ✅ Verified: backend typechecks; all Phase 7 routes enforce auth (401); web + admin build
+- ⏳ Not run against a live DB (no Postgres). Later: real SendGrid/Twilio + WhatsApp templates, websocket chat (vs polling), per-garment GLB models, marketing campaigns
+
+---
+
+**All 7 phases have their core built.** Remaining work is the "Later" items per phase, live integrations (each needs the brand's own credentials), real product media/3D assets, and running the whole stack against a production database.
 
 ---
 

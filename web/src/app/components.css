@@ -464,6 +464,52 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .status-pill.status-pending { color: var(--clay); border-color: color-mix(in srgb, var(--clay) 40%, transparent); }
 .status-pill.status-shipped, .status-pill.status-packed { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
 
+/* ---------------- 3D viewer ---------------- */
+.pdp-image { position: relative; }
+.badge-3d {
+  position: absolute; top: 10px; left: 10px; z-index: 2;
+  background: var(--bg); color: var(--accent);
+  font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line);
+}
+
+/* ---------------- Support chat ---------------- */
+.support-fab {
+  position: fixed; z-index: 40;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  background: var(--accent); color: var(--on-accent);
+  padding: 12px 18px; border-radius: 999px; box-shadow: var(--shadow);
+  font-size: 13px; letter-spacing: .04em; text-transform: uppercase; font-weight: 400;
+}
+.support-fab:hover { filter: brightness(1.05); }
+.support-new { display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+.support-new input, .support-new textarea, .chat-input input {
+  font: inherit; font-size: 15px; padding: 11px 13px;
+  border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--text);
+}
+.support-new input:focus, .support-new textarea:focus, .chat-input input:focus { outline: none; border-color: var(--accent); }
+.support-list-h { font-size: 15px; margin-bottom: 12px; }
+.support-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 4px;
+  padding: 14px 16px; margin-bottom: 10px; cursor: pointer; font: inherit; color: var(--text); text-align: left;
+}
+.support-row:hover { border-color: var(--accent); }
+.support-back { margin-bottom: 14px; }
+.chat {
+  display: flex; flex-direction: column; gap: 10px; padding: 16px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  min-height: 240px; max-height: 50vh; overflow-y: auto; margin-bottom: 14px;
+}
+.bubble { max-width: 78%; padding: 10px 14px; border-radius: 12px; font-size: 14.5px; line-height: 1.45; }
+.bubble p { margin: 0; }
+.bubble.mine { align-self: flex-end; background: var(--accent); color: var(--on-accent); border-bottom-right-radius: 3px; }
+.bubble.theirs { align-self: flex-start; background: var(--panel); color: var(--text); border-bottom-left-radius: 3px; }
+.bubble-who { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; opacity: .7; margin-bottom: 3px; }
+.chat-input { display: flex; gap: 10px; }
+.chat-input input { flex: 1; }
+
 /* ---------------- Order tracking ---------------- */
 .strong { font-weight: 500; }
 .tracking { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 24px; }

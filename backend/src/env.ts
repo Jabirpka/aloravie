@@ -31,6 +31,15 @@ const schema = z.object({
   // live = use real seller connectors (require each marketplace's credentials)
   MARKETPLACE_MODE: z.enum(["mock", "live"]).default("mock"),
 
+  // Notifications (email / SMS / WhatsApp)
+  // mock = log + record notifications without sending; live = use the providers below
+  NOTIFY_MODE: z.enum(["mock", "live"]).default("mock"),
+  SENDGRID_API_KEY: z.string().optional(),
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN: z.string().optional(),
+  TWILIO_SMS_FROM: z.string().optional(),
+  TWILIO_WHATSAPP_FROM: z.string().optional(),
+
   // Seller identity (printed on invoices / delivery notes / labels)
   SELLER_NAME: z.string().default("Aloravie"),
   SELLER_GSTIN: z.string().default(""),

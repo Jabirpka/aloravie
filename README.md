@@ -74,7 +74,9 @@ The back office runs on `http://localhost:3001`. Sign in with a staff account �
 4. In the storefront: create an account → add to bag → checkout → the order confirms and appears under **My orders**.
 5. In the **back office** (:3001): open the order → confirm it → **Book shipment** (mock courier issues an AWB) → **Sync tracking** to advance it → print the **Invoice / Delivery note / Label**. The storefront order page shows the live tracking timeline.
 
-For real payments set `PAYMENT_MODE=razorpay` and add `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` (Razorpay test keys work end to end). For real couriers set `COURIER_MODE=shiprocket` with the `SHIPROCKET_*` vars, and fill in `SELLER_*` (name, GSTIN, address) for the printed documents — all in `backend/.env`.
+6. In the back office **Channels**: connect a marketplace (Amazon/Flipkart/Myntra/Meesho) → it lists your active catalogue → **Push stock** sends one shared pool → **Pull orders** imports marketplace orders into the same pipeline (in `MARKETPLACE_MODE=mock`, sample orders are generated so you can see it work).
+
+For real payments set `PAYMENT_MODE=razorpay` and add `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` (Razorpay test keys work end to end). For real couriers set `COURIER_MODE=shiprocket` with the `SHIPROCKET_*` vars, and fill in `SELLER_*` (name, GSTIN, address) for the printed documents. For real marketplace sync set `MARKETPLACE_MODE=live` and implement each channel's connector with its seller credentials — all in `backend/.env`.
 
 ## Conventions
 

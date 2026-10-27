@@ -14,6 +14,7 @@ import { paymentRouter } from "./modules/payments/payments.routes.js";
 import { orderRouter } from "./modules/orders/orders.routes.js";
 import { adminRouter } from "./modules/admin/admin.routes.js";
 import { fulfilmentRouter } from "./modules/fulfilment/fulfilment.routes.js";
+import { marketplaceRouter } from "./modules/marketplace/marketplace.routes.js";
 
 export function createApp(): Express {
   const app = express();
@@ -38,6 +39,7 @@ export function createApp(): Express {
   app.use("/api/orders", orderRouter);
   app.use("/api/admin", adminRouter);
   app.use("/api/admin", fulfilmentRouter);
+  app.use("/api/admin", marketplaceRouter);
 
   // Fallbacks
   app.use(notFoundHandler);

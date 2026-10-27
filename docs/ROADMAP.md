@@ -54,11 +54,15 @@ The operational core the brand is run from. Built as a separate staff admin app 
 - ✅ Verified: all three apps typecheck/build clean; fulfilment routes enforce staff auth (401); document generators rendered and field-checked
 - ⏳ Not run against a live DB (no Postgres). Later: courier rate shopping, live Shiprocket tracking webhook, email/SMS/WhatsApp notifications on status change (Phase 7), bulk label print
 
-## Phase 5 — Marketplace sync ⬜
-One stock pool across all channels.
-- Channel connectors: **Amazon.in**, **Flipkart**, **Myntra**, **Meesho** (then AJIO / Nykaa)
-- Inventory push (avoid oversell), listing sync
-- Marketplace order ingestion into the same order pipeline
+## Phase 5 — Marketplace sync ✅ (core)
+One stock pool across all channels. Connector abstraction with `MARKETPLACE_MODE` mock | live.
+- ✅ Connect a channel (**Amazon.in / Flipkart / Myntra / Meesho**) → lists the active catalogue (variant → marketplace SKU)
+- ✅ Inventory push: one shared stock pool pushed to each channel's listings (available = onHand − reserved)
+- ✅ Order ingestion: marketplace orders imported as CONFIRMED orders in the same pipeline (MARKETPLACE payment, SKU → variant mapping, stock decremented, de-duped by external id)
+- ✅ Admin **Channels** page: connect, push stock, pull orders, listings + sync history
+- ✅ Mock connector fully working (simulates push + generates sample orders) so it's demoable without seller accounts; live connectors are stubbed (fail loudly until each marketplace's API + credentials are added)
+- ✅ Verified: backend + admin typecheck/build clean; routes enforce staff auth (401); mock connector unit-tested (valid SKUs, de-dup, empty-catalogue)
+- ⏳ Not run against a live DB (no Postgres). Later: real Amazon SP-API / Flipkart / Myntra / Meesho connectors, scheduled auto-sync, price sync, AJIO / Nykaa
 
 ## Phase 6 — Mobile apps ⬜
 - Flutter apps for **Android + iOS** sharing the storefront experience

@@ -175,6 +175,7 @@ model ProductVariant {
 
   inventory  InventoryItem[]
   orderItems OrderItem[]
+  listings   ChannelListing[]
 
   @@index([productId])
   @@map("product_variants")
@@ -228,16 +229,66 @@ enum ChannelType {
 
 // A place orders come from. Marketplace orders flow through the same pipeline.
 model SalesChannel {
-  id        String      @id @default(cuid())
-  type      ChannelType
-  name      String
-  isActive  Boolean     @default(true)
-  createdAt DateTime    @default(now())
+  id              String    @id @default(cuid())
+  type            ChannelType
+  name            String
+  isActive        Boolean   @default(true)
+  connected       Boolean   @default(false) // seller account linked / credentials set
+  config          Json? // per-channel settings/credentials reference (never raw secrets in prod)
+  lastOrderSyncAt DateTime?
+  createdAt       DateTime  @default(now())
 
-  orders Order[]
+  orders   Order[]
+  listings ChannelListing[]
+  syncLogs SyncLog[]
 
   @@unique([type])
   @@map("sales_channels")
+}
+
+// Maps one of our variants to its listing on a marketplace channel.
+model ChannelListing {
+  id            String       @id @default(cuid())
+  channelId     String
+  channel       SalesChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  variantId     String
+  variant       ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  externalSku   String // the SKU/listing id on the marketplace
+  isActive      Boolean      @default(true)
+  lastPushedQty Int?
+  lastSyncedAt  DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([channelId, variantId])
+  @@index([channelId])
+  @@map("channel_listings")
+}
+
+enum SyncType {
+  INVENTORY_PUSH
+  ORDER_PULL
+}
+
+enum SyncStatus {
+  OK
+  PARTIAL
+  FAILED
+}
+
+// A record of each sync run, for admin visibility.
+model SyncLog {
+  id        String       @id @default(cuid())
+  channelId String
+  channel   SalesChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  type      SyncType
+  status    SyncStatus
+  count     Int          @default(0)
+  message   String?
+  createdAt DateTime     @default(now())
+
+  @@index([channelId])
+  @@map("sync_logs")
 }
 
 enum OrderStatus {
@@ -292,6 +343,7 @@ enum PaymentProvider {
   RAZORPAY
   MOCK
   COD
+  MARKETPLACE
 }
 
 enum PaymentStatus {

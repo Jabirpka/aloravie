@@ -4,6 +4,8 @@ import type {
   CustomerDetail,
   CustomerRow,
   InventoryRow,
+  ChannelDetail,
+  ChannelRow,
   OrderDetail,
   OrderRow,
   OrderStatus,
@@ -205,6 +207,32 @@ export async function syncTracking(shipmentId: string): Promise<Shipment> {
   return (
     (await apiFetch(`/api/admin/shipments/${shipmentId}/sync`, { method: "POST" })) as { shipment: Shipment }
   ).shipment;
+}
+
+// --- Marketplace channels ---
+
+export async function listChannels(): Promise<ChannelRow[]> {
+  return ((await apiFetch("/api/admin/channels")) as { channels: ChannelRow[] }).channels;
+}
+
+export async function getChannel(id: string): Promise<ChannelDetail> {
+  return ((await apiFetch(`/api/admin/channels/${id}`)) as { channel: ChannelDetail }).channel;
+}
+
+export async function connectChannel(id: string): Promise<ChannelDetail> {
+  return ((await apiFetch(`/api/admin/channels/${id}/connect`, { method: "POST" })) as { channel: ChannelDetail })
+    .channel;
+}
+
+export async function pushChannelInventory(id: string): Promise<{ pushed: number }> {
+  return (await apiFetch(`/api/admin/channels/${id}/push-inventory`, { method: "POST" })) as { pushed: number };
+}
+
+export async function pullChannelOrders(id: string): Promise<{ created: number; skipped: number }> {
+  return (await apiFetch(`/api/admin/channels/${id}/pull-orders`, { method: "POST" })) as {
+    created: number;
+    skipped: number;
+  };
 }
 
 export type DocumentKind = "invoice" | "delivery-note" | "label";

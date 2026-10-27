@@ -166,6 +166,47 @@ export interface CustomerDetail {
   }[];
 }
 
+export interface ChannelRow {
+  id: string;
+  type: string;
+  name: string;
+  isActive: boolean;
+  connected: boolean;
+  listingCount: number;
+  orderCount: number;
+  lastOrderSyncAt: string | null;
+}
+
+export interface ChannelListingRow {
+  id: string;
+  externalSku: string;
+  isActive: boolean;
+  lastPushedQty: number | null;
+  lastSyncedAt: string | null;
+  variant: { sku: string; name: string; product: { title: string } };
+}
+
+export interface SyncLogRow {
+  id: string;
+  type: "INVENTORY_PUSH" | "ORDER_PULL";
+  status: "OK" | "PARTIAL" | "FAILED";
+  count: number;
+  message: string | null;
+  createdAt: string;
+}
+
+export interface ChannelDetail {
+  id: string;
+  type: string;
+  name: string;
+  isActive: boolean;
+  connected: boolean;
+  lastOrderSyncAt: string | null;
+  listings: ChannelListingRow[];
+  syncLogs: SyncLogRow[];
+  _count: { orders: number };
+}
+
 export interface AdminProduct {
   id: string;
   title: string;

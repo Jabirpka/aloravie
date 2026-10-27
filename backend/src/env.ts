@@ -26,6 +26,11 @@ const schema = z.object({
   SHIPROCKET_PASSWORD: z.string().optional(),
   SHIPROCKET_PICKUP_LOCATION: z.string().optional(),
 
+  // Marketplace sync
+  // mock = simulate inventory push + generate sample marketplace orders (dev)
+  // live = use real seller connectors (require each marketplace's credentials)
+  MARKETPLACE_MODE: z.enum(["mock", "live"]).default("mock"),
+
   // Seller identity (printed on invoices / delivery notes / labels)
   SELLER_NAME: z.string().default("Aloravie"),
   SELLER_GSTIN: z.string().default(""),

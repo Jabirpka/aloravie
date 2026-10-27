@@ -36,6 +36,14 @@ Two distinct identities:
 
 Catalog: `Category` → `Product` → `ProductVariant` (the sellable unit, carries SKU + price). Stock is `InventoryItem` (variant × location). Selling happens on a `SalesChannel` (WEB, marketplaces). Orders (`Order` → `OrderItem`) reference the channel they came from, so marketplace orders flow through the same pipeline.
 
+## Marketplace sync (Phase 5)
+
+- A connector abstraction (`backend/src/modules/marketplace/connector.service.ts`) with `MARKETPLACE_MODE=mock|live`. **Mock** accepts inventory pushes and generates realistic sample orders from the channel's own catalogue (so it only references SKUs we actually list); **live** is a per-channel stub that fails loudly until each marketplace's API + seller credentials are implemented.
+- **ChannelListing** maps our `ProductVariant` to a marketplace SKU per channel. Connecting a channel lists every active variant (externalSku defaults to our SKU). **SyncLog** records each push/pull for admin visibility. `SalesChannel` gained `connected` / `config` / `lastOrderSyncAt`.
+- **Inventory push** sends `available = onHand − reserved` (default location) for each active listing — one shared stock pool across the web store and every marketplace.
+- **Order ingestion** (`sync.service.ts`) imports marketplace orders into the *same* pipeline: maps external SKU → variant, finds/creates the customer, creates a `CONFIRMED` order with a `MARKETPLACE` payment, decrements stock, and de-duplicates on `Order.externalId`. Marketplace handles shipping (shippingMinor = 0) and payment.
+- All channel endpoints live under `/api/admin/*` (staff-auth).
+
 ## Fulfilment (Phase 4)
 
 - **Courier** behind a small abstraction (`backend/src/modules/fulfilment/courier.service.ts`): `COURIER_MODE=mock` issues an AWB and advances a mock tracking timeline one stage per sync (demoable without any account); `shiprocket` calls Shiprocket's REST API (auth + ad-hoc order) and needs `SHIPROCKET_*` + a pickup location. Live Shiprocket tracking sync is left to their webhook (sync returns 501 in that mode).

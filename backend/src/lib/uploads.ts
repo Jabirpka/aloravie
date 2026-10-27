@@ -25,6 +25,16 @@ export const uploadImages = multer({
   },
 });
 
+// Short voice notes for support chat.
+export const uploadAudio = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith("audio/")) cb(null, true);
+    else cb(new Error("Only audio files are allowed"));
+  },
+});
+
 /** Public path for an uploaded file (served by express.static at /uploads). */
 export function fileUrl(filename: string): string {
   return `/uploads/${filename}`;

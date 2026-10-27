@@ -34,6 +34,13 @@ export async function getForCustomer(customerId: string, id: string) {
   return convo;
 }
 
+export async function addCustomerVoice(customerId: string, id: string, audioUrl: string) {
+  await getForCustomer(customerId, id); // ownership check
+  await prisma.supportMessage.create({ data: { conversationId: id, sender: "CUSTOMER", body: "", audioUrl } });
+  await prisma.supportConversation.update({ where: { id }, data: { lastMessageAt: new Date(), status: "OPEN" } });
+  return prisma.supportConversation.findUnique({ where: { id }, include: withMessages });
+}
+
 export async function addCustomerMessage(customerId: string, id: string, body: string) {
   if (!body.trim()) throw badRequest("Message cannot be empty");
   await getForCustomer(customerId, id); // ownership check

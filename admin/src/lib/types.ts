@@ -224,6 +224,7 @@ export interface SupportMessage {
   id: string;
   sender: "CUSTOMER" | "STAFF" | "SYSTEM";
   body: string;
+  audioUrl?: string | null;
   createdAt: string;
 }
 

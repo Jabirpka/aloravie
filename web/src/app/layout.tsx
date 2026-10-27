@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { Jost } from "next/font/google";
 import "./globals.css";
 import "./components.css";
-import Link from "next/link";
 import { CartProvider } from "@/components/CartProvider";
 import { AuthProvider } from "@/components/AuthProvider";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { ChatWidget } from "@/components/ChatWidget";
 
 const jost = Jost({
   subsets: ["latin"],
@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Header />
             <main>{children}</main>
             <Footer />
-            <Link href="/support" className="support-fab" aria-label="Chat with support">Chat with us</Link>
+            <ChatWidget />
           </CartProvider>
         </AuthProvider>
       </body>

@@ -234,6 +234,24 @@ export async function startConversation(subject: string, message: string): Promi
   return body.conversation;
 }
 
+export function assetUrl(p: string): string {
+  return p.startsWith("http") ? p : `${API_URL}${p}`;
+}
+
+export async function sendVoice(id: string, blob: Blob): Promise<SupportConversation> {
+  const form = new FormData();
+  form.append("audio", blob, "voice.webm");
+  async function attempt(): Promise<Response> {
+    const headers = new Headers();
+    const token = getAccessToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return fetch(`${API_URL}/api/support/conversations/${id}/voice`, { method: "POST", headers, body: form });
+  }
+  let res = await attempt();
+  if (res.status === 401 && (await tryRefresh())) res = await attempt();
+  return (await parse(res) as { conversation: SupportConversation }).conversation;
+}
+
 export async function sendMessage(id: string, message: string): Promise<SupportConversation> {
   const body = (await rawFetch(`/api/support/conversations/${id}/messages`, {
     method: "POST",

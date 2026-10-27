@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { useAuth } from "@/components/AdminAuthProvider";
-import { ApiRequestError, closeSupport, getSupport, replySupport } from "@/lib/api";
+import { ApiRequestError, assetUrl, closeSupport, getSupport, replySupport } from "@/lib/api";
 import type { SupportConversationDetail } from "@/lib/types";
 
 export default function SupportDetailPage() {
@@ -93,7 +93,11 @@ export default function SupportDetailPage() {
               {convo.messages.map((m) => (
                 <div key={m.id} className={`abubble ${m.sender === "STAFF" ? "staff" : m.sender === "SYSTEM" ? "system" : "customer"}`}>
                   <span className="abubble-who">{m.sender === "STAFF" ? "You" : m.sender === "SYSTEM" ? "System" : (convo.customer?.name ?? "Customer")}</span>
-                  <p>{m.body}</p>
+                  {m.audioUrl ? (
+                    <audio controls src={assetUrl(m.audioUrl)} style={{ height: 36, maxWidth: 220, marginTop: 4 }} />
+                  ) : (
+                    <p>{m.body}</p>
+                  )}
                   <span className="abubble-time">{new Date(m.createdAt).toLocaleString("en-IN")}</span>
                 </div>
               ))}

@@ -529,6 +529,7 @@ model SupportMessage {
   conversation   SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         MessageSender
   body           String
+  audioUrl       String? // voice note, when present
   createdAt      DateTime            @default(now())
 
   @@index([conversationId])

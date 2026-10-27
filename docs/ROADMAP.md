@@ -64,9 +64,15 @@ One stock pool across all channels. Connector abstraction with `MARKETPLACE_MODE
 - ✅ Verified: backend + admin typecheck/build clean; routes enforce staff auth (401); mock connector unit-tested (valid SKUs, de-dup, empty-catalogue)
 - ⏳ Not run against a live DB (no Postgres). Later: real Amazon SP-API / Flipkart / Myntra / Meesho connectors, scheduled auto-sync, price sync, AJIO / Nykaa
 
-## Phase 6 — Mobile apps ⬜
-- Flutter apps for **Android + iOS** sharing the storefront experience
-- Push notifications
+## Phase 6 — Mobile apps ✅ (core)
+Flutter app in `mobile/` (Android + iOS), same backend API + brand (light + Evening).
+- ✅ Shopping: home, shop + category filter, product detail, cart (sample-catalogue fallback)
+- ✅ Customer auth (tokens in SharedPreferences), checkout (mock payment), order history
+- ✅ Order detail with live tracking timeline
+- ✅ On-device notifications on order events; FCM remote push documented as the production step
+- ✅ Verified structurally (17 Dart files, no version-incompatible APIs); **not** run through `flutter analyze` (no SDK in the build env) — run it after `flutter pub get`
+- Setup: `flutter create .` (generates android/ios) → `flutter pub get` → `flutter run`
+- Later: native Razorpay (razorpay_flutter), FCM wiring, product images, deep links
 
 ## Phase 7 — Engagement ⬜
 - Live chat / customer support

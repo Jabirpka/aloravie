@@ -36,6 +36,13 @@ Two distinct identities:
 
 Catalog: `Category` → `Product` → `ProductVariant` (the sellable unit, carries SKU + price). Stock is `InventoryItem` (variant × location). Selling happens on a `SalesChannel` (WEB, marketplaces). Orders (`Order` → `OrderItem`) reference the channel they came from, so marketplace orders flow through the same pipeline.
 
+## Mobile apps (Phase 6)
+
+- **Flutter** app in `mobile/` for Android + iOS, sharing the same backend API as the web store. State via `provider` (CartModel + AuthModel), networking via `http`, tokens in `SharedPreferences`, Jost via `google_fonts`, same light/Evening brand theme (`lib/theme.dart`).
+- Screens mirror the storefront (home, shop, product, cart, checkout, account, orders, order+tracking) with a bottom-nav shell. A sample catalogue renders before the backend is reachable.
+- **Notifications**: on-device local notifications fire on order events (`lib/services/notifications.dart`); remote push (FCM) is documented as the production step and designed to plug into the same service. Checkout uses mock payment on mobile; native Razorpay (`razorpay_flutter`) is a documented follow-up.
+- Platform folders (`android/`, `ios/`) are generated with `flutter create .` (not committed until then); only `lib/` + `pubspec.yaml` + config are in the repo.
+
 ## Marketplace sync (Phase 5)
 
 - A connector abstraction (`backend/src/modules/marketplace/connector.service.ts`) with `MARKETPLACE_MODE=mock|live`. **Mock** accepts inventory pushes and generates realistic sample orders from the channel's own catalogue (so it only references SKUs we actually list); **live** is a per-channel stub that fails loudly until each marketplace's API + seller credentials are implemented.

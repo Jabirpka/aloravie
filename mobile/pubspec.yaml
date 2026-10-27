@@ -1,0 +1,25 @@
+name: aloravie
+description: Aloravie — women's clothing & accessories. Android + iOS storefront.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+  http: ^1.2.2
+  google_fonts: ^6.2.1
+  shared_preferences: ^2.3.2
+  # Local notifications for order updates. Remote push (FCM) is documented in
+  # README.md as the production step and plugs into lib/services/notifications.dart.
+  flutter_local_notifications: ^17.2.3
+
+dev_dependencies:
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

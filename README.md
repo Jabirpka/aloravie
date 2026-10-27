@@ -19,11 +19,12 @@ This is a monorepo for the web store, the mobile apps, the business back office,
 backend/    Node + TypeScript + Express + Prisma (PostgreSQL) API
 web/        Storefront (Next.js) — the shop customers see          :3000
 admin/      Back office (Next.js) — staff dashboard & operations    :3001
+mobile/     Flutter app — Android + iOS storefront
 shared/     Cross-cutting assets shared by web, apps and admin (brand design tokens)
 docs/       ROADMAP.md (phases) and ARCHITECTURE.md (decisions)
 ```
 
-The Flutter mobile apps are added in a later phase (see `docs/ROADMAP.md`).
+The Flutter app lives in `mobile/` — see `mobile/README.md` to run it (`flutter create .` then `flutter run`).
 
 ## Getting started (backend)
 

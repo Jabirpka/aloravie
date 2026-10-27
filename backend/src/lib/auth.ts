@@ -2,12 +2,13 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { randomBytes, createHash } from "node:crypto";
 import { env } from "../env.js";
-import type { UserRole } from "@prisma/client";
+import type { Department, UserRole } from "@prisma/client";
 
 export interface AccessTokenPayload {
   sub: string; // user id
   role: UserRole;
   email: string;
+  departments: Department[];
 }
 
 const BCRYPT_ROUNDS = 12;
@@ -39,9 +40,9 @@ export function signAccessToken(payload: AccessTokenPayload): string {
 export function verifyAccessToken(token: string): AccessTokenPayload {
   const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET);
   if (typeof decoded === "string") throw new Error("Unexpected token form");
-  const { sub, role, email } = decoded as jwt.JwtPayload & Partial<AccessTokenPayload>;
+  const { sub, role, email, departments } = decoded as jwt.JwtPayload & Partial<AccessTokenPayload>;
   if (!sub || !role || !email) throw new Error("Malformed access token");
-  return { sub, role, email };
+  return { sub, role, email, departments: departments ?? [] };
 }
 
 // --- Customer (storefront) access tokens ---

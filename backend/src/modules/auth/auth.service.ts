@@ -21,14 +21,20 @@ export interface PublicUser {
   email: string;
   name: string;
   role: User["role"];
+  departments: User["departments"];
 }
 
 function toPublic(user: User): PublicUser {
-  return { id: user.id, email: user.email, name: user.name, role: user.role };
+  return { id: user.id, email: user.email, name: user.name, role: user.role, departments: user.departments };
 }
 
 async function issueTokens(user: User): Promise<AuthResult> {
-  const accessToken = signAccessToken({ sub: user.id, role: user.role, email: user.email });
+  const accessToken = signAccessToken({
+    sub: user.id,
+    role: user.role,
+    email: user.email,
+    departments: user.departments,
+  });
   const refreshToken = generateRefreshToken();
   await prisma.refreshToken.create({
     data: {

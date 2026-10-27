@@ -4,16 +4,18 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "./AdminAuthProvider";
+import { canAccess, type Feature } from "@/lib/access";
 
-const NAV = [
-  { href: "/", label: "Dashboard" },
-  { href: "/orders", label: "Orders" },
-  { href: "/inventory", label: "Inventory" },
-  { href: "/products", label: "Products" },
-  { href: "/channels", label: "Channels" },
-  { href: "/customers", label: "Customers" },
-  { href: "/support", label: "Support" },
-  { href: "/notifications", label: "Notifications" },
+const NAV: { href: string; label: string; feature: Feature }[] = [
+  { href: "/", label: "Dashboard", feature: "dashboard" },
+  { href: "/orders", label: "Orders", feature: "orders.view" },
+  { href: "/inventory", label: "Inventory", feature: "inventory" },
+  { href: "/products", label: "Products", feature: "catalog" },
+  { href: "/channels", label: "Channels", feature: "channels" },
+  { href: "/customers", label: "Customers", feature: "customers" },
+  { href: "/support", label: "Support", feature: "support" },
+  { href: "/notifications", label: "Notifications", feature: "notifications" },
+  { href: "/settings", label: "Settings", feature: "employees" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -64,7 +66,7 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
       <aside className="sidebar">
         <span className="wordmark sidebar-brand">alorav<span className="sun">{"ı"}</span>e</span>
         <nav className="nav">
-          {NAV.map((item) => (
+          {NAV.filter((item) => canAccess(user, item.feature)).map((item) => (
             <Link key={item.href} href={item.href} className={isActive(pathname, item.href) ? "active" : ""}>
               {item.label}
             </Link>

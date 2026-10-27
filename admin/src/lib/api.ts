@@ -6,6 +6,8 @@ import type {
   InventoryRow,
   ChannelDetail,
   ChannelRow,
+  Department,
+  Employee,
   NotificationLogRow,
   OrderDetail,
   SupportConversationDetail,
@@ -267,6 +269,39 @@ export async function closeSupport(id: string): Promise<SupportConversationDetai
 
 export async function listNotifications(): Promise<NotificationLogRow[]> {
   return ((await apiFetch("/api/admin/notifications")) as { notifications: NotificationLogRow[] }).notifications;
+}
+
+// --- Employees / administration ---
+
+export async function listEmployees(): Promise<Employee[]> {
+  return ((await apiFetch("/api/admin/employees")) as { employees: Employee[] }).employees;
+}
+
+export async function createEmployee(input: {
+  name: string;
+  email: string;
+  password: string;
+  role: "OWNER" | "ADMIN" | "STAFF";
+  departments: Department[];
+}): Promise<Employee> {
+  return ((await apiFetch("/api/admin/employees", { method: "POST", body: JSON.stringify(input) })) as {
+    employee: Employee;
+  }).employee;
+}
+
+export async function updateEmployee(
+  id: string,
+  input: Partial<{
+    name: string;
+    role: "OWNER" | "ADMIN" | "STAFF";
+    departments: Department[];
+    isActive: boolean;
+    password: string;
+  }>,
+): Promise<Employee> {
+  return ((await apiFetch(`/api/admin/employees/${id}`, { method: "PATCH", body: JSON.stringify(input) })) as {
+    employee: Employee;
+  }).employee;
 }
 
 export type DocumentKind = "invoice" | "delivery-note" | "label";

@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
 import { asyncHandler, notFound } from "../../lib/http.js";
-import { authenticate, requireRole } from "../../middleware/auth.js";
+import { authenticate } from "../../middleware/auth.js";
+import { requireAccess } from "../../middleware/access.js";
 import { prisma } from "../../prisma.js";
 import { createShipment, syncTracking } from "./fulfilment.service.js";
 import {
@@ -15,7 +16,11 @@ import {
 
 export const fulfilmentRouter: Router = Router();
 
-fulfilmentRouter.use(authenticate, requireRole("OWNER", "ADMIN", "STAFF"));
+// Router-level guards can't be used here: several admin routers share the
+// /api/admin mount, so a router-level guard would run for requests destined for
+// other routers. Gate each route instead.
+fulfilmentRouter.use(authenticate);
+const fulfil = requireAccess("orders.fulfil");
 
 const idParam = z.object({ id: z.string().min(1) });
 const numberParam = z.object({ orderNumber: z.string().min(1) });
@@ -23,6 +28,7 @@ const numberParam = z.object({ orderNumber: z.string().min(1) });
 // Book a shipment for an order.
 fulfilmentRouter.post(
   "/orders/:id/shipment",
+  fulfil,
   asyncHandler(async (req, res) => {
     const { id } = idParam.parse(req.params);
     res.status(201).json({ shipment: await createShipment(id) });
@@ -32,6 +38,7 @@ fulfilmentRouter.post(
 // Advance tracking for a shipment.
 fulfilmentRouter.post(
   "/shipments/:id/sync",
+  fulfil,
   asyncHandler(async (req, res) => {
     const { id } = idParam.parse(req.params);
     res.json({ shipment: await syncTracking(id) });
@@ -75,6 +82,7 @@ async function loadDocOrder(orderNumber: string): Promise<{ order: DocOrder; shi
 
 fulfilmentRouter.get(
   "/orders/:orderNumber/invoice",
+  fulfil,
   asyncHandler(async (req, res) => {
     const { orderNumber } = numberParam.parse(req.params);
     const { order } = await loadDocOrder(orderNumber);
@@ -84,6 +92,7 @@ fulfilmentRouter.get(
 
 fulfilmentRouter.get(
   "/orders/:orderNumber/delivery-note",
+  fulfil,
   asyncHandler(async (req, res) => {
     const { orderNumber } = numberParam.parse(req.params);
     const { order } = await loadDocOrder(orderNumber);
@@ -93,6 +102,7 @@ fulfilmentRouter.get(
 
 fulfilmentRouter.get(
   "/orders/:orderNumber/label",
+  fulfil,
   asyncHandler(async (req, res) => {
     const { orderNumber } = numberParam.parse(req.params);
     const { order, shipment } = await loadDocOrder(orderNumber);

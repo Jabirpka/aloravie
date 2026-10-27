@@ -9,11 +9,24 @@ export type OrderStatus =
 
 export type ProductStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
 
+export type Department = "RETURNS" | "PACKING" | "CUSTOMER_CARE" | "OFFERS" | "CRM";
+
 export interface StaffUser {
   id: string;
   email: string;
   name: string;
   role: "OWNER" | "ADMIN" | "STAFF";
+  departments: Department[];
+}
+
+export interface Employee {
+  id: string;
+  email: string;
+  name: string;
+  role: "OWNER" | "ADMIN" | "STAFF";
+  departments: Department[];
+  isActive: boolean;
+  createdAt: string;
 }
 
 export interface Summary {

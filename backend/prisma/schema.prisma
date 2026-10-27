@@ -22,15 +22,26 @@ enum UserRole {
   STAFF
 }
 
+// Operational departments. OWNER/ADMIN bypass these (full access); STAFF are
+// gated to the features their departments grant.
+enum Department {
+  RETURNS
+  PACKING
+  CUSTOMER_CARE
+  OFFERS
+  CRM
+}
+
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String       @id @default(cuid())
+  email        String       @unique
   passwordHash String
   name         String
-  role         UserRole @default(STAFF)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  role         UserRole     @default(STAFF)
+  departments  Department[] @default([])
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   refreshTokens RefreshToken[]
 

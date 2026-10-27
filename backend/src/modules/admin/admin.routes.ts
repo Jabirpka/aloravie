@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../../lib/http.js";
-import { authenticate, requireRole } from "../../middleware/auth.js";
+import { authenticate } from "../../middleware/auth.js";
+import { requireAccess } from "../../middleware/access.js";
 import * as admin from "./admin.service.js";
 
 export const adminRouter: Router = Router();
 
-// Everything under /api/admin requires a signed-in staff user.
-adminRouter.use(authenticate, requireRole("OWNER", "ADMIN", "STAFF"));
+// Signed-in staff; each route below is further gated to a department feature.
+adminRouter.use(authenticate);
 
 const orderStatus = z.enum([
   "PENDING",
@@ -22,6 +23,7 @@ const productStatus = z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]);
 
 adminRouter.get(
   "/summary",
+  requireAccess("dashboard"),
   asyncHandler(async (_req, res) => {
     res.json(await admin.getSummary());
   }),
@@ -30,6 +32,7 @@ adminRouter.get(
 // Orders
 adminRouter.get(
   "/orders",
+  requireAccess("orders.view"),
   asyncHandler(async (req, res) => {
     const { status } = z.object({ status: orderStatus.optional() }).parse(req.query);
     res.json({ orders: await admin.listOrders({ status }) });
@@ -38,6 +41,7 @@ adminRouter.get(
 
 adminRouter.get(
   "/orders/:orderNumber",
+  requireAccess("orders.view"),
   asyncHandler(async (req, res) => {
     const { orderNumber } = z.object({ orderNumber: z.string().min(1) }).parse(req.params);
     res.json({ order: await admin.getOrder(orderNumber) });
@@ -46,6 +50,7 @@ adminRouter.get(
 
 adminRouter.patch(
   "/orders/:id/status",
+  requireAccess("orders.fulfil"),
   asyncHandler(async (req, res) => {
     const { id } = z.object({ id: z.string().min(1) }).parse(req.params);
     const { status } = z.object({ status: orderStatus }).parse(req.body);
@@ -56,6 +61,7 @@ adminRouter.patch(
 // Inventory
 adminRouter.get(
   "/inventory",
+  requireAccess("inventory"),
   asyncHandler(async (req, res) => {
     const q = z
       .object({ lowStock: z.enum(["true", "false"]).optional(), threshold: z.coerce.number().int().optional() })
@@ -71,6 +77,7 @@ adminRouter.get(
 
 adminRouter.post(
   "/inventory/adjust",
+  requireAccess("inventory"),
   asyncHandler(async (req, res) => {
     const input = z
       .object({
@@ -91,6 +98,7 @@ adminRouter.post(
 // Products
 adminRouter.get(
   "/products",
+  requireAccess("catalog"),
   asyncHandler(async (_req, res) => {
     res.json({ products: await admin.listProducts() });
   }),
@@ -98,6 +106,7 @@ adminRouter.get(
 
 adminRouter.patch(
   "/products/:id",
+  requireAccess("catalog"),
   asyncHandler(async (req, res) => {
     const { id } = z.object({ id: z.string().min(1) }).parse(req.params);
     const data = z
@@ -115,6 +124,7 @@ adminRouter.patch(
 // Customers (CRM)
 adminRouter.get(
   "/customers",
+  requireAccess("customers"),
   asyncHandler(async (req, res) => {
     const { q } = z.object({ q: z.string().optional() }).parse(req.query);
     res.json({ customers: await admin.listCustomers(q) });
@@ -123,6 +133,7 @@ adminRouter.get(
 
 adminRouter.get(
   "/customers/:id",
+  requireAccess("customers"),
   asyncHandler(async (req, res) => {
     const { id } = z.object({ id: z.string().min(1) }).parse(req.params);
     res.json({ customer: await admin.getCustomer(id) });

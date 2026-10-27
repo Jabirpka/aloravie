@@ -173,6 +173,11 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 
 .status-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
+/* Department checkboxes (settings) */
+.dept-grid { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.dept-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.dept-check input { width: auto; }
+
 /* Support chat (admin) */
 .admin-chat { display: flex; flex-direction: column; gap: 10px; max-height: 52vh; overflow-y: auto; }
 .abubble { max-width: 76%; padding: 9px 13px; border-radius: 10px; font-size: 14px; }

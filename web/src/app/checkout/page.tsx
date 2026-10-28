@@ -12,6 +12,7 @@ import {
   confirmMockPayment,
   createCheckout,
   listAddresses,
+  validateCoupon,
   verifyRazorpayPayment,
 } from "@/lib/client";
 
@@ -70,6 +71,10 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<Address[]>([]);
   const [selected, setSelected] = useState<string>("new"); // address id or "new"
+  const [couponInput, setCouponInput] = useState("");
+  const [applied, setApplied] = useState<{ code: string; discountMinor: number } | null>(null);
+  const [couponErr, setCouponErr] = useState<string | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
 
   useEffect(() => {
     if (loading || !customer) return;
@@ -89,7 +94,23 @@ export default function CheckoutPage() {
     [lines],
   );
   const shippingMinor = subtotalMinor >= FREE_SHIP_MINOR ? 0 : SHIP_FLAT_MINOR;
-  const totalMinor = subtotalMinor + taxMinor + shippingMinor;
+  const discountMinor = applied?.discountMinor ?? 0;
+  const totalMinor = Math.max(0, subtotalMinor + taxMinor + shippingMinor - discountMinor);
+
+  async function applyCoupon() {
+    if (!couponInput.trim()) return;
+    setCouponBusy(true);
+    setCouponErr(null);
+    try {
+      const c = await validateCoupon(couponInput.trim(), subtotalMinor);
+      setApplied({ code: c.code, discountMinor: c.discountMinor });
+    } catch (err) {
+      setApplied(null);
+      setCouponErr(err instanceof ApiRequestError ? err.message : "Couldn't apply that code.");
+    } finally {
+      setCouponBusy(false);
+    }
+  }
 
   function update(field: keyof AddressInput, value: string) {
     setAddress((a) => ({ ...a, [field]: value }));
@@ -101,12 +122,10 @@ export default function CheckoutPage() {
     setBusy(true);
     try {
       const chosen = selected !== "new" ? saved.find((a) => a.id === selected) : undefined;
-      const res = await createCheckout(
-        lines,
-        chosen
-          ? { shippingAddressId: chosen.id, email: email || undefined }
-          : { shippingAddress: address, email: email || undefined },
-      );
+      const base = chosen
+        ? { shippingAddressId: chosen.id, email: email || undefined }
+        : { shippingAddress: address, email: email || undefined };
+      const res = await createCheckout(lines, { ...base, couponCode: applied?.code });
       const contactName = chosen?.name ?? address.name;
       const contactPhone = chosen?.phone ?? address.phone;
 
@@ -250,9 +269,26 @@ export default function CheckoutPage() {
               </li>
             ))}
           </ul>
+          <div className="coupon-box">
+            {applied ? (
+              <div className="coupon-applied">
+                <span>Code <span className="strong">{applied.code}</span> applied</span>
+                <button type="button" className="link-btn" onClick={() => { setApplied(null); setCouponInput(""); }}>Remove</button>
+              </div>
+            ) : (
+              <div className="coupon-row">
+                <input placeholder="Discount code" value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())} />
+                <button type="button" className="btn ghost" onClick={applyCoupon} disabled={couponBusy || !couponInput.trim()}>Apply</button>
+              </div>
+            )}
+            {couponErr && <p className="form-error" style={{ margin: "6px 0 0" }}>{couponErr}</p>}
+          </div>
           <div className="summary-row"><span>Subtotal</span><span>{formatMoney(subtotalMinor, currency)}</span></div>
           <div className="summary-row"><span>GST (est.)</span><span>{formatMoney(taxMinor, currency)}</span></div>
           <div className="summary-row"><span>Shipping</span><span>{shippingMinor === 0 ? "Free" : formatMoney(shippingMinor, currency)}</span></div>
+          {discountMinor > 0 && (
+            <div className="summary-row"><span>Discount{applied ? ` (${applied.code})` : ""}</span><span>−{formatMoney(discountMinor, currency)}</span></div>
+          )}
           <div className="summary-row total"><span>Total</span><span>{formatMoney(totalMinor, currency)}</span></div>
         </aside>
       </div>

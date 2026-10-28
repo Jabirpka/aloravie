@@ -166,7 +166,7 @@ export async function logoutCustomer(): Promise<void> {
 
 export async function createCheckout(
   lines: CartLine[],
-  opts: { shippingAddressId?: string; shippingAddress?: AddressInput; email?: string },
+  opts: { shippingAddressId?: string; shippingAddress?: AddressInput; email?: string; couponCode?: string },
 ): Promise<CheckoutResponse> {
   const items = lines.map((l) => ({ variantId: l.variantId, quantity: l.quantity }));
   return (await rawFetch(
@@ -236,6 +236,17 @@ export async function startConversation(subject: string, message: string): Promi
 
 export function assetUrl(p: string): string {
   return p.startsWith("http") ? p : `${API_URL}${p}`;
+}
+
+export async function validateCoupon(
+  code: string,
+  subtotalMinor: number,
+): Promise<{ code: string; description: string | null; discountMinor: number }> {
+  const body = (await rawFetch("/api/coupons/validate", {
+    method: "POST",
+    body: JSON.stringify({ code, subtotalMinor }),
+  })) as { coupon: { code: string; description: string | null; discountMinor: number } };
+  return body.coupon;
 }
 
 export async function sendVoice(id: string, blob: Blob): Promise<SupportConversation> {

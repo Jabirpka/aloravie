@@ -26,6 +26,7 @@ const checkoutSchema = z
     shippingAddress: addressSchema.optional(),
     email: z.string().email().optional(),
     phone: z.string().optional(),
+    couponCode: z.string().optional(),
   })
   .refine((v) => v.shippingAddressId || v.shippingAddress, {
     message: "A shipping address is required",

@@ -113,6 +113,9 @@ export default function OrderPage() {
           <div className="summary-row"><span>Subtotal</span><span>{formatMoney(order.subtotalMinor, order.currency)}</span></div>
           <div className="summary-row"><span>GST</span><span>{formatMoney(order.taxMinor, order.currency)}</span></div>
           <div className="summary-row"><span>Shipping</span><span>{order.shippingMinor === 0 ? "Free" : formatMoney(order.shippingMinor, order.currency)}</span></div>
+          {order.discountMinor > 0 && (
+            <div className="summary-row"><span>Discount</span><span>−{formatMoney(order.discountMinor, order.currency)}</span></div>
+          )}
           <div className="summary-row total"><span>Total paid</span><span>{formatMoney(order.totalMinor, order.currency)}</span></div>
         </div>
 

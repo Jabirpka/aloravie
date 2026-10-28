@@ -4,6 +4,7 @@ import { AppError, badRequest, conflict, notFound } from "../../lib/http.js";
 import { computeTaxMinor } from "../../lib/tax.js";
 import { formatOrderNumber } from "../../lib/order-number.js";
 import { createRazorpayOrder } from "../payments/payments.service.js";
+import { validateCoupon } from "../coupons/coupons.service.js";
 
 export interface AddressSnapshot {
   name: string;
@@ -22,6 +23,7 @@ export interface CheckoutInput {
   shippingAddress?: AddressSnapshot;
   email?: string;
   phone?: string;
+  couponCode?: string;
 }
 
 export async function createCheckout(customerId: string, input: CheckoutInput) {
@@ -58,7 +60,19 @@ export async function createCheckout(customerId: string, input: CheckoutInput) {
     lines.map((l) => ({ unitPriceMinor: l.variant.priceMinor, quantity: l.quantity })),
   );
   const shippingMinor = subtotalMinor >= env.FREE_SHIP_THRESHOLD_MINOR ? 0 : env.SHIPPING_FLAT_MINOR;
-  const totalMinor = subtotalMinor + taxMinor + shippingMinor;
+
+  // Apply a coupon if one was entered (validateCoupon throws a readable reason).
+  let discountMinor = 0;
+  let appliedCouponId: string | null = null;
+  let appliedCouponCode: string | null = null;
+  if (input.couponCode?.trim()) {
+    const applied = await validateCoupon(input.couponCode, subtotalMinor);
+    discountMinor = applied.discountMinor;
+    appliedCouponId = applied.coupon.id;
+    appliedCouponCode = applied.coupon.code;
+  }
+
+  const totalMinor = Math.max(0, subtotalMinor + taxMinor + shippingMinor - discountMinor);
 
   // Resolve the shipping address snapshot.
   let shippingAddress: AddressSnapshot;
@@ -117,7 +131,9 @@ export async function createCheckout(customerId: string, input: CheckoutInput) {
         subtotalMinor,
         shippingMinor,
         taxMinor,
+        discountMinor,
         totalMinor,
+        couponCode: appliedCouponCode,
         items: {
           create: lines.map((l) => ({
             variantId: l.variant.id,
@@ -135,6 +151,10 @@ export async function createCheckout(customerId: string, input: CheckoutInput) {
     const payment = await tx.payment.create({
       data: { orderId: order.id, provider, amountMinor: totalMinor, currency, status: "CREATED" },
     });
+
+    if (appliedCouponId) {
+      await tx.coupon.update({ where: { id: appliedCouponId }, data: { usedCount: { increment: 1 } } });
+    }
 
     return { order, payment };
   });

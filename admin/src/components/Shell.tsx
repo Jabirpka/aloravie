@@ -12,6 +12,8 @@ const NAV: { href: string; label: string; feature: Feature }[] = [
   { href: "/returns", label: "Returns", feature: "returns" },
   { href: "/inventory", label: "Inventory", feature: "inventory" },
   { href: "/products", label: "Products", feature: "catalog" },
+  { href: "/categories", label: "Categories", feature: "catalog" },
+  { href: "/coupons", label: "Coupons", feature: "coupons" },
   { href: "/channels", label: "Channels", feature: "channels" },
   { href: "/customers", label: "Customers", feature: "customers" },
   { href: "/support", label: "Support", feature: "support" },

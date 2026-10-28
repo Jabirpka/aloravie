@@ -8,6 +8,8 @@ import type {
   ChannelRow,
   Department,
   Employee,
+  CategoryRow,
+  Coupon,
   NotificationLogRow,
   OrderDetail,
   ReturnRecord,
@@ -329,6 +331,50 @@ export async function decideReturn(
     method: "POST",
     body: note ? JSON.stringify({ note }) : undefined,
   })) as { return: ReturnRecord }).return;
+}
+
+// --- Coupons ---
+
+export async function listCoupons(): Promise<Coupon[]> {
+  return ((await apiFetch("/api/admin/coupons")) as { coupons: Coupon[] }).coupons;
+}
+
+export interface CouponInput {
+  code: string;
+  description?: string;
+  type: "PERCENT" | "FIXED";
+  value: number;
+  minSpendMinor?: number;
+  maxDiscountMinor?: number | null;
+  active?: boolean;
+  usageLimit?: number | null;
+  endsAt?: string | null;
+}
+
+export async function createCoupon(input: CouponInput): Promise<Coupon> {
+  return ((await apiFetch("/api/admin/coupons", { method: "POST", body: JSON.stringify(input) })) as { coupon: Coupon }).coupon;
+}
+
+export async function updateCoupon(id: string, input: Partial<CouponInput>): Promise<Coupon> {
+  return ((await apiFetch(`/api/admin/coupons/${id}`, { method: "PATCH", body: JSON.stringify(input) })) as { coupon: Coupon }).coupon;
+}
+
+// --- Categories ---
+
+export async function listCategories(): Promise<CategoryRow[]> {
+  return ((await apiFetch("/api/admin/categories")) as { categories: CategoryRow[] }).categories;
+}
+
+export async function createCategory(input: { name: string; slug: string; parentId?: string | null }): Promise<CategoryRow> {
+  return ((await apiFetch("/api/admin/categories", { method: "POST", body: JSON.stringify(input) })) as { category: CategoryRow }).category;
+}
+
+export async function updateCategory(id: string, input: { name?: string; slug?: string; parentId?: string | null }): Promise<CategoryRow> {
+  return ((await apiFetch(`/api/admin/categories/${id}`, { method: "PATCH", body: JSON.stringify(input) })) as { category: CategoryRow }).category;
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  await apiFetch(`/api/admin/categories/${id}`, { method: "DELETE" });
 }
 
 export type DocumentKind = "invoice" | "delivery-note" | "label";

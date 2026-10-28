@@ -336,6 +336,7 @@ model Order {
   taxMinor      Int          @default(0)
   discountMinor Int          @default(0)
   totalMinor    Int          @default(0)
+  couponCode    String?
 
   // External marketplace reference (null for WEB)
   externalId    String?
@@ -575,4 +576,33 @@ model ReturnRequest {
   @@index([orderId])
   @@index([customerId])
   @@map("return_requests")
+}
+
+// ---------------------------------------------------------------------------
+// Coupons / offers (Phase 8)
+// ---------------------------------------------------------------------------
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+model Coupon {
+  id               String       @id @default(cuid())
+  code             String       @unique
+  description      String?
+  type             DiscountType
+  value            Int // percent (1-100) or fixed minor units
+  minSpendMinor    Int          @default(0)
+  maxDiscountMinor Int? // cap for percentage discounts
+  active           Boolean      @default(true)
+  startsAt         DateTime?
+  endsAt           DateTime?
+  usageLimit       Int? // total redemptions allowed (null = unlimited)
+  usedCount        Int          @default(0)
+  currency         String       @default("INR")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@map("coupons")
 }

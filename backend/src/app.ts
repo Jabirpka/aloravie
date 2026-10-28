@@ -21,6 +21,9 @@ import { supportAdminRouter } from "./modules/support/support.admin.routes.js";
 import { employeeRouter } from "./modules/employees/employees.routes.js";
 import { returnRouter } from "./modules/returns/returns.routes.js";
 import { returnAdminRouter } from "./modules/returns/returns.admin.routes.js";
+import { couponRouter } from "./modules/coupons/coupons.routes.js";
+import { couponAdminRouter } from "./modules/coupons/coupons.admin.routes.js";
+import { categoryAdminRouter } from "./modules/categories/categories.admin.routes.js";
 
 export function createApp(): Express {
   const app = express();
@@ -52,8 +55,11 @@ export function createApp(): Express {
   app.use("/api/admin", supportAdminRouter);
   app.use("/api/admin", employeeRouter);
   app.use("/api/admin", returnAdminRouter);
+  app.use("/api/admin", couponAdminRouter);
+  app.use("/api/admin", categoryAdminRouter);
   app.use("/api/support", supportRouter);
   app.use("/api/returns", returnRouter);
+  app.use("/api/coupons", couponRouter);
 
   // Fallbacks
   app.use(notFoundHandler);

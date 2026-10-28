@@ -281,6 +281,32 @@ export interface ReturnRecord {
   customer: { id: string; name: string | null; email: string | null } | null;
 }
 
+export interface Coupon {
+  id: string;
+  code: string;
+  description: string | null;
+  type: "PERCENT" | "FIXED";
+  value: number;
+  minSpendMinor: number;
+  maxDiscountMinor: number | null;
+  active: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
+  usageLimit: number | null;
+  usedCount: number;
+  currency: string;
+  createdAt: string;
+}
+
+export interface CategoryRow {
+  id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+  parent: { id: string; name: string } | null;
+  _count: { products: number; children: number };
+}
+
 export interface AdminProduct {
   id: string;
   title: string;

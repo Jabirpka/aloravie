@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getProduct } from "@/lib/api";
 import { AddToBag } from "@/components/AddToBag";
 import { Product3DViewer } from "@/components/Product3DViewer";
+import { ReviewsSection } from "@/components/ReviewsSection";
 import { toneForSlug } from "@/lib/placeholder";
 
 export async function generateMetadata({
@@ -72,6 +73,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
       {source === "sample" && (
         <p className="sample-note">Sample product — connect the backend database to serve live detail.</p>
       )}
+
+      <ReviewsSection slug={product.slug} />
     </section>
   );
 }

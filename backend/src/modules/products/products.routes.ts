@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { z } from "zod";
-import { asyncHandler } from "../../lib/http.js";
+import { asyncHandler, unauthorized } from "../../lib/http.js";
 import { authenticate, requireRole } from "../../middleware/auth.js";
+import { authenticateCustomer } from "../../middleware/customer-auth.js";
 import * as productService from "./products.service.js";
+import * as reviews from "../reviews/reviews.service.js";
 
 export const productRouter: Router = Router();
 
@@ -45,6 +47,30 @@ productRouter.get(
 );
 
 const slugParamSchema = z.object({ slug: z.string().min(1) });
+
+// Reviews for a product (public read). Defined before "/:slug" is irrelevant
+// since paths differ, but kept together for clarity.
+productRouter.get(
+  "/:slug/reviews",
+  asyncHandler(async (req, res) => {
+    const { slug } = slugParamSchema.parse(req.params);
+    res.json(await reviews.listPublished(slug));
+  }),
+);
+
+// Write a review (signed-in customer).
+productRouter.post(
+  "/:slug/reviews",
+  authenticateCustomer,
+  asyncHandler(async (req, res) => {
+    if (!req.customer) throw unauthorized();
+    const { slug } = slugParamSchema.parse(req.params);
+    const input = z
+      .object({ rating: z.number().int().min(1).max(5), title: z.string().optional(), body: z.string().optional() })
+      .parse(req.body);
+    res.status(201).json({ review: await reviews.createReview(req.customer.sub, slug, input) });
+  }),
+);
 
 productRouter.get(
   "/:slug",

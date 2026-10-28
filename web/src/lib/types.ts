@@ -87,6 +87,22 @@ export interface Address extends AddressInput {
   createdAt: string;
 }
 
+export interface ReviewItem {
+  id: string;
+  rating: number;
+  title: string | null;
+  body: string | null;
+  verifiedPurchase: boolean;
+  authorName: string;
+  createdAt: string;
+}
+
+export interface ReviewSummary {
+  average: number;
+  count: number;
+  reviews: ReviewItem[];
+}
+
 export type ReturnReason = "WRONG_SIZE" | "DAMAGED" | "NOT_AS_DESCRIBED" | "CHANGED_MIND" | "OTHER";
 export type ReturnStatus = "REQUESTED" | "APPROVED" | "REJECTED" | "REFUNDED";
 

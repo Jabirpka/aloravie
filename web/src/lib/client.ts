@@ -238,6 +238,20 @@ export function assetUrl(p: string): string {
   return p.startsWith("http") ? p : `${API_URL}${p}`;
 }
 
+export async function getReviews(slug: string): Promise<import("./types").ReviewSummary> {
+  return (await rawFetch(`/api/products/${encodeURIComponent(slug)}/reviews`)) as import("./types").ReviewSummary;
+}
+
+export async function postReview(
+  slug: string,
+  input: { rating: number; title?: string; body?: string },
+): Promise<void> {
+  await rawFetch(`/api/products/${encodeURIComponent(slug)}/reviews`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  }, true);
+}
+
 export async function validateCoupon(
   code: string,
   subtotalMinor: number,

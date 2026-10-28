@@ -24,6 +24,7 @@ import { returnAdminRouter } from "./modules/returns/returns.admin.routes.js";
 import { couponRouter } from "./modules/coupons/coupons.routes.js";
 import { couponAdminRouter } from "./modules/coupons/coupons.admin.routes.js";
 import { categoryAdminRouter } from "./modules/categories/categories.admin.routes.js";
+import { reviewAdminRouter } from "./modules/reviews/reviews.admin.routes.js";
 
 export function createApp(): Express {
   const app = express();
@@ -57,6 +58,7 @@ export function createApp(): Express {
   app.use("/api/admin", returnAdminRouter);
   app.use("/api/admin", couponAdminRouter);
   app.use("/api/admin", categoryAdminRouter);
+  app.use("/api/admin", reviewAdminRouter);
   app.use("/api/support", supportRouter);
   app.use("/api/returns", returnRouter);
   app.use("/api/coupons", couponRouter);

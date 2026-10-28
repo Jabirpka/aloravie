@@ -13,6 +13,7 @@ import type {
   NotificationLogRow,
   OrderDetail,
   ReturnRecord,
+  ReviewRecord,
   SupportConversationDetail,
   SupportConversationRow,
   OrderRow,
@@ -375,6 +376,19 @@ export async function updateCategory(id: string, input: { name?: string; slug?: 
 
 export async function deleteCategory(id: string): Promise<void> {
   await apiFetch(`/api/admin/categories/${id}`, { method: "DELETE" });
+}
+
+// --- Reviews ---
+
+export async function listReviews(status?: "PUBLISHED" | "HIDDEN"): Promise<ReviewRecord[]> {
+  const qs = status ? `?status=${status}` : "";
+  return ((await apiFetch(`/api/admin/reviews${qs}`)) as { reviews: ReviewRecord[] }).reviews;
+}
+
+export async function setReviewStatus(id: string, status: "PUBLISHED" | "HIDDEN"): Promise<ReviewRecord> {
+  return ((await apiFetch(`/api/admin/reviews/${id}`, { method: "PATCH", body: JSON.stringify({ status }) })) as {
+    review: ReviewRecord;
+  }).review;
 }
 
 export type DocumentKind = "invoice" | "delivery-note" | "label";

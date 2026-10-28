@@ -307,6 +307,18 @@ export interface CategoryRow {
   _count: { products: number; children: number };
 }
 
+export interface ReviewRecord {
+  id: string;
+  rating: number;
+  title: string | null;
+  body: string | null;
+  verifiedPurchase: boolean;
+  status: "PUBLISHED" | "HIDDEN";
+  createdAt: string;
+  product: { title: string; slug: string };
+  customer: { name: string | null; email: string | null };
+}
+
 export interface AdminProduct {
   id: string;
   title: string;

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { asyncHandler, unauthorized } from "../../lib/http.js";
 import { authenticateCustomer } from "../../middleware/customer-auth.js";
 import * as customers from "./customers.service.js";
+import * as wishlist from "../wishlist/wishlist.service.js";
 
 export const customerRouter: Router = Router();
 
@@ -95,6 +96,40 @@ customerRouter.delete(
   asyncHandler(async (req, res) => {
     if (!req.customer) throw unauthorized();
     await customers.deleteAddress(req.customer.sub, idParam.parse(req.params).id);
+    res.status(204).send();
+  }),
+);
+
+// --- Wishlist ---
+
+const productIdBody = z.object({ productId: z.string().min(1) });
+const productIdParam = z.object({ productId: z.string().min(1) });
+
+customerRouter.get(
+  "/me/wishlist",
+  authenticateCustomer,
+  asyncHandler(async (req, res) => {
+    if (!req.customer) throw unauthorized();
+    res.json({ products: await wishlist.listWishlist(req.customer.sub) });
+  }),
+);
+
+customerRouter.post(
+  "/me/wishlist",
+  authenticateCustomer,
+  asyncHandler(async (req, res) => {
+    if (!req.customer) throw unauthorized();
+    await wishlist.addToWishlist(req.customer.sub, productIdBody.parse(req.body).productId);
+    res.status(201).json({ ok: true });
+  }),
+);
+
+customerRouter.delete(
+  "/me/wishlist/:productId",
+  authenticateCustomer,
+  asyncHandler(async (req, res) => {
+    if (!req.customer) throw unauthorized();
+    await wishlist.removeFromWishlist(req.customer.sub, productIdParam.parse(req.params).productId);
     res.status(204).send();
   }),
 );

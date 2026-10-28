@@ -304,6 +304,21 @@ export async function deleteAddress(id: string): Promise<void> {
   await rawFetch(`/api/customers/me/addresses/${id}`, { method: "DELETE" }, true);
 }
 
+// --- Wishlist ---
+
+export async function listWishlist(): Promise<import("./types").Product[]> {
+  const body = (await rawFetch("/api/customers/me/wishlist", {}, true)) as { products: import("./types").Product[] };
+  return body.products;
+}
+
+export async function addWishlist(productId: string): Promise<void> {
+  await rawFetch("/api/customers/me/wishlist", { method: "POST", body: JSON.stringify({ productId }) }, true);
+}
+
+export async function removeWishlist(productId: string): Promise<void> {
+  await rawFetch(`/api/customers/me/wishlist/${productId}`, { method: "DELETE" }, true);
+}
+
 // --- Returns ---
 
 export async function listReturns(): Promise<ReturnRequest[]> {

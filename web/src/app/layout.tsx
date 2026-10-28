@@ -4,6 +4,7 @@ import "./globals.css";
 import "./components.css";
 import { CartProvider } from "@/components/CartProvider";
 import { AuthProvider } from "@/components/AuthProvider";
+import { WishlistProvider } from "@/components/WishlistProvider";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ChatWidget } from "@/components/ChatWidget";
@@ -29,12 +30,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={jost.variable}>
       <body>
         <AuthProvider>
-          <CartProvider>
-            <Header />
-            <main>{children}</main>
-            <Footer />
-            <ChatWidget />
-          </CartProvider>
+          <WishlistProvider>
+            <CartProvider>
+              <Header />
+              <main>{children}</main>
+              <Footer />
+              <ChatWidget />
+            </CartProvider>
+          </WishlistProvider>
         </AuthProvider>
       </body>
     </html>

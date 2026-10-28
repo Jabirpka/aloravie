@@ -78,8 +78,23 @@ model Customer {
   supportConversations  SupportConversation[]
   returns               ReturnRequest[]
   reviews               Review[]
+  wishlist              WishlistItem[]
 
   @@map("customers")
+}
+
+// A customer's saved product (one row per customer+product).
+model WishlistItem {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([customerId, productId])
+  @@index([customerId])
+  @@map("wishlist_items")
 }
 
 // Rotating refresh tokens for storefront customers (stored hashed, revocable).
@@ -157,6 +172,7 @@ model Product {
   images      ProductImage[]
   variants    ProductVariant[]
   reviews     Review[]
+  wishlistedBy WishlistItem[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 

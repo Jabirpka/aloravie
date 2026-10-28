@@ -57,6 +57,7 @@ function AccountInner() {
         </dl>
         <div className="account-actions">
           <Link href="/account/orders" className="btn primary">My orders</Link>
+          <Link href="/account/wishlist" className="btn ghost">Wishlist</Link>
           <Link href="/account/addresses" className="btn ghost">Addresses</Link>
           <Link href="/account/returns" className="btn ghost">Returns</Link>
           <button className="btn ghost" onClick={() => logout()}>Sign out</button>

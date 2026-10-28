@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProduct } from "@/lib/api";
 import { AddToBag } from "@/components/AddToBag";
+import { WishlistButton } from "@/components/WishlistButton";
 import { Product3DViewer } from "@/components/Product3DViewer";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { toneForSlug } from "@/lib/placeholder";
@@ -61,6 +62,11 @@ export default async function ProductPage({ params }: { params: { slug: string }
           {product.description && <p className="pdp-desc">{product.description}</p>}
 
           <AddToBag product={product} />
+
+          <div className="pdp-wishlist">
+            <WishlistButton productId={product.id} slug={product.slug} />
+            <span className="muted">Save to wishlist</span>
+          </div>
 
           <ul className="pdp-details">
             <li>Free shipping on orders over ₹1,499</li>

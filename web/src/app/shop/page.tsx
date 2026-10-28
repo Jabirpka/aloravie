@@ -16,10 +16,11 @@ const CATEGORIES = [
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: { category?: string };
+  searchParams: Promise<{ category?: string }>;
 }) {
   const { products, source } = await getProducts();
-  const activeCategory = searchParams.category ?? "";
+  const { category } = await searchParams;
+  const activeCategory = category ?? "";
   const filtered = activeCategory
     ? products.filter((p) => p.category?.slug === activeCategory)
     : products;

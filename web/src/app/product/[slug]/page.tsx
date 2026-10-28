@@ -11,9 +11,10 @@ import { toneForSlug } from "@/lib/placeholder";
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { product } = await getProduct(params.slug);
+  const { slug } = await params;
+  const { product } = await getProduct(slug);
   if (!product) return { title: "Not found" };
   return {
     title: product.title,
@@ -21,8 +22,9 @@ export async function generateMetadata({
   };
 }
 
-export default async function ProductPage({ params }: { params: { slug: string } }) {
-  const { product, source } = await getProduct(params.slug);
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const { product, source } = await getProduct(slug);
   if (!product) notFound();
 
   const firstImage = product.images[0];

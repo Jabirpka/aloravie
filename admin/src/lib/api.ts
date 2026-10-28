@@ -1,6 +1,7 @@
 // Admin API client (staff). Tokens live in localStorage; a 401 triggers one refresh-and-retry.
 import type {
   AdminProduct,
+  AuditEntry,
   CustomerDetail,
   CustomerRow,
   InventoryRow,
@@ -397,6 +398,12 @@ export async function setReviewStatus(id: string, status: "PUBLISHED" | "HIDDEN"
   return ((await apiFetch(`/api/admin/reviews/${id}`, { method: "PATCH", body: JSON.stringify({ status }) })) as {
     review: ReviewRecord;
   }).review;
+}
+
+// --- Audit log ---
+
+export async function listAudit(): Promise<AuditEntry[]> {
+  return ((await apiFetch(`/api/admin/audit`)) as { entries: AuditEntry[] }).entries;
 }
 
 export type DocumentKind = "invoice" | "delivery-note" | "label";

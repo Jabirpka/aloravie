@@ -338,3 +338,16 @@ export interface AdminProduct {
   variants: { id: string; sku: string; name: string; priceMinor: number; currency: string }[];
   _count: { images: number };
 }
+
+export interface AuditEntry {
+  id: string;
+  actorName: string;
+  actorEmail: string;
+  action: string;
+  summary: string;
+  entity: string | null;
+  entityId: string | null;
+  method: string;
+  path: string;
+  createdAt: string;
+}

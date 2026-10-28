@@ -26,6 +26,8 @@ import { couponAdminRouter } from "./modules/coupons/coupons.admin.routes.js";
 import { categoryAdminRouter } from "./modules/categories/categories.admin.routes.js";
 import { reviewAdminRouter } from "./modules/reviews/reviews.admin.routes.js";
 import { reportAdminRouter } from "./modules/reports/reports.admin.routes.js";
+import { auditAdminRouter } from "./modules/audit/audit.admin.routes.js";
+import { auditMiddleware } from "./middleware/audit.js";
 
 export function createApp(): Express {
   const app = express();
@@ -51,6 +53,8 @@ export function createApp(): Express {
   app.use("/api/checkout", checkoutRouter);
   app.use("/api/payments", paymentRouter);
   app.use("/api/orders", orderRouter);
+  // Records every successful admin mutation; must run before the admin routers.
+  app.use("/api/admin", auditMiddleware);
   app.use("/api/admin", adminRouter);
   app.use("/api/admin", fulfilmentRouter);
   app.use("/api/admin", marketplaceRouter);
@@ -61,6 +65,7 @@ export function createApp(): Express {
   app.use("/api/admin", categoryAdminRouter);
   app.use("/api/admin", reviewAdminRouter);
   app.use("/api/admin", reportAdminRouter);
+  app.use("/api/admin", auditAdminRouter);
   app.use("/api/support", supportRouter);
   app.use("/api/returns", returnRouter);
   app.use("/api/coupons", couponRouter);

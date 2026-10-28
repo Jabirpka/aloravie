@@ -635,3 +635,26 @@ model Review {
   @@index([productId])
   @@map("reviews")
 }
+
+// ---------------------------------------------------------------------------
+// Audit log (Phase 8 extras)
+// ---------------------------------------------------------------------------
+
+// Records every successful admin mutation (who, what, when). Actor fields are
+// snapshots so entries survive staff removal.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorName  String
+  actorEmail String
+  action     String // normalized, e.g. "POST /returns/:id/approve"
+  summary    String // human-readable, e.g. "Approved a return"
+  entity     String? // resource, e.g. "returns"
+  entityId   String?
+  method     String
+  path       String
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("audit_logs")
+}

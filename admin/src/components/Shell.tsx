@@ -20,6 +20,7 @@ const NAV: { href: string; label: string; feature: Feature }[] = [
   { href: "/customers", label: "Customers", feature: "customers" },
   { href: "/support", label: "Support", feature: "support" },
   { href: "/notifications", label: "Notifications", feature: "notifications" },
+  { href: "/audit", label: "Audit log", feature: "employees" },
   { href: "/settings", label: "Settings", feature: "employees" },
 ];
 

@@ -23,7 +23,26 @@ One server running four things behind Nginx:
 
 ---
 
-## 1. Point your domain at the server (DNS)
+## Two phases — pick where you are
+
+This runs in two profiles (both defined in `deploy/README.md`):
+
+- **Phase 1 — IP preview (you are here).** Run it on the bare VPS IP over plain HTTP to demo
+  and test end to end **before you have a domain**. Uses `deploy/nginx/ip-staging.conf`:
+  storefront at `http://<IP>/`, admin at `http://<IP>:8081/`, API under `http://<IP>/api`.
+  ⚠️ A bare IP **cannot get an HTTPS certificate**, and Razorpay live payments + KYC need
+  HTTPS on a real domain — so **payments stay in mock mode** here. It's a preview, not a
+  payment-ready launch.
+- **Phase 2 — domain go-live (later).** Point a real domain at the box, use the three
+  per-domain Nginx files, add HTTPS with certbot, and switch the backend to production +
+  Razorpay.
+
+**Sections 2–7 are identical for both phases.** Section 1 and sections 8–9 note where they
+differ. Since you're on **Phase 1**, skip section 1 (DNS) for now.
+
+## 1. Point your domain at the server (DNS) — *Phase 2 only*
+
+> Skip this for the IP preview. Do it once you have a domain.
 
 In your domain registrar's DNS settings, add **A records** → `SERVER_IP`:
 
@@ -53,11 +72,12 @@ adduser deploy
 usermod -aG sudo deploy
 ```
 
-Enable a firewall (allow SSH + web only):
+Enable a firewall. Port 8081 is the admin back office in the IP-preview phase:
 
 ```bash
 ufw allow OpenSSH
-ufw allow 'Nginx Full'
+ufw allow 'Nginx Full'        # 80 + 443
+ufw allow 8081                # admin back office (Phase 1 / IP preview)
 ufw --force enable
 ```
 
@@ -139,7 +159,12 @@ echo "REFRESH: $(openssl rand -hex 32)"
 nano backend/.env
 ```
 
-Set at least these for production:
+**Phase 1 (IP preview):** use the staging values instead of the production block below —
+`NODE_ENV=development`, `PAYMENT_MODE=mock`, `STORAGE_DRIVER=local`,
+`CORS_ORIGINS=http://SERVER_IP,http://SERVER_IP:8081`, and leave the Razorpay keys blank.
+Everything still works except real payments (checkout uses the mock flow).
+
+**Phase 2 (domain launch):** set these:
 
 ```ini
 NODE_ENV=production
@@ -177,8 +202,13 @@ SELLER_PHONE=<your phone>
 These are **build-time** values (Next inlines `NEXT_PUBLIC_*`), so they must be set *before* you build.
 
 ```bash
-echo 'NEXT_PUBLIC_API_URL=https://api.aloravie.com' > web/.env.local
-echo 'NEXT_PUBLIC_API_URL=https://api.aloravie.com' > admin/.env.local
+# Phase 1 (IP preview) — point at the bare IP (API is served under /api on the same host):
+echo 'NEXT_PUBLIC_API_URL=http://SERVER_IP' > web/.env.local
+echo 'NEXT_PUBLIC_API_URL=http://SERVER_IP' > admin/.env.local
+
+# Phase 2 (domain) — use the API hostname instead:
+#   echo 'NEXT_PUBLIC_API_URL=https://api.aloravie.com' > web/.env.local
+#   echo 'NEXT_PUBLIC_API_URL=https://api.aloravie.com' > admin/.env.local
 ```
 
 ---
@@ -190,10 +220,8 @@ echo 'NEXT_PUBLIC_API_URL=https://api.aloravie.com' > admin/.env.local
 cd ~/aloravie/backend
 npm ci
 npx prisma generate
-# First deploy only — creates & applies the initial migration:
-npx prisma migrate dev --name init
-#   (on later deploys use:  npx prisma migrate deploy)
-npm run db:seed        # locations, channels, categories, sample products
+npx prisma migrate deploy   # applies the committed migrations (init, audit, returns, wishlist…)
+npm run db:seed             # locations, channels, categories, sample products
 npm run build          # compiles TypeScript to dist/
 
 # Storefront
@@ -225,8 +253,26 @@ pm2 status         # aloravie-api / -web / -admin should all be "online"
 
 ## 8. Nginx reverse proxy
 
-The repo ships ready-made server blocks in **`deploy/nginx/`** — one per hostname (see
-`deploy/README.md`). Copy them in, swap the placeholder domain, then enable:
+### Phase 1 — IP preview
+
+One file does it all: `deploy/nginx/ip-staging.conf` — storefront on `:80` with the API under
+`/api`, admin on `:8081`, and `server_name _` so it matches the bare IP (nothing to edit).
+
+```bash
+# from ~/aloravie
+sudo cp deploy/nginx/ip-staging.conf /etc/nginx/sites-available/
+sudo rm -f /etc/nginx/sites-enabled/default        # drop Ubuntu's default page
+sudo ln -s /etc/nginx/sites-available/ip-staging.conf /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Reachable at: storefront `http://SERVER_IP/` · admin `http://SERVER_IP:8081/` · API `http://SERVER_IP/api`.
+**Skip section 9** (no HTTPS on a bare IP) and go to section 10.
+
+### Phase 2 — domain
+
+The repo ships one block per hostname in `deploy/nginx/`. Copy them in, swap the placeholder
+domain, then enable:
 
 ```bash
 # from ~/aloravie
@@ -247,13 +293,15 @@ sudo ln -s /etc/nginx/sites-available/api.aloravie.conf   /etc/nginx/sites-enabl
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Each file's header comments carry the exact `certbot` command for step 9, and the `api` block
-already sets `client_max_body_size 15M` for image / return-photo / voice-note uploads. The
-blocks set the proxy headers inline, so no `proxy_params` include is needed.
+The `api` block already sets `client_max_body_size 15M` for image / return-photo / voice-note
+uploads and sets the proxy headers inline (no `proxy_params` include needed).
 
 ---
 
-## 9. Turn on HTTPS (free, auto-renewing)
+## 9. Turn on HTTPS (free, auto-renewing) — *Phase 2 only*
+
+> Not applicable to the IP preview — a bare IP can't get a certificate. Do this once your
+> domain's DNS points at the box (section 1).
 
 ```bash
 sudo certbot --nginx -d aloravie.com -d www.aloravie.com -d admin.aloravie.com -d api.aloravie.com
@@ -323,6 +371,9 @@ cd ~/aloravie && pm2 reload ecosystem.config.js
 ---
 
 ## 13. Before you call it "live" — checklist
+
+These are for **Phase 2 (domain launch)**. In Phase 1 (IP preview) payments stay in mock mode
+and there's no HTTPS — that's expected, not a gap.
 
 - [ ] `PAYMENT_MODE=razorpay` with **live** keys, and the Razorpay webhook configured (URL `https://api.aloravie.com/...`, secret in `RAZORPAY_WEBHOOK_SECRET`)
 - [ ] `SELLER_GSTIN` and real seller address set (they print on invoices)

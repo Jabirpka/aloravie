@@ -319,6 +319,16 @@ export interface ReviewRecord {
   customer: { name: string | null; email: string | null };
 }
 
+export interface Report {
+  days: number | null;
+  kpis: { revenueMinor: number; orderCount: number; aovMinor: number; customersCount: number };
+  byChannel: { name: string; revenueMinor: number; orderCount: number }[];
+  bestSellers: { title: string; units: number; revenueMinor: number }[];
+  gst: { taxableMinor: number; gstMinor: number; shippingMinor: number; discountMinor: number; totalMinor: number };
+  dailyRevenue: { date: string; revenueMinor: number }[];
+  lowStock: { product: string; variantName: string; sku: string; location: string; available: number }[];
+}
+
 export interface AdminProduct {
   id: string;
   title: string;

@@ -14,6 +14,7 @@ export type Feature =
   | "returns"
   | "coupons"
   | "notifications"
+  | "reports"
   | "employees";
 
 export const ALL_DEPARTMENTS: Department[] = ["RETURNS", "PACKING", "CUSTOMER_CARE", "OFFERS", "CRM"];
@@ -39,6 +40,7 @@ const FEATURE_DEPARTMENTS: Record<Feature, Department[]> = {
   returns: ["RETURNS"],
   coupons: ["OFFERS"],
   notifications: ["CUSTOMER_CARE"],
+  reports: [], // OWNER/ADMIN only
   employees: [], // OWNER/ADMIN only
 };
 

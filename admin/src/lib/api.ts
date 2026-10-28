@@ -12,6 +12,7 @@ import type {
   Coupon,
   NotificationLogRow,
   OrderDetail,
+  Report,
   ReturnRecord,
   ReviewRecord,
   SupportConversationDetail,
@@ -376,6 +377,13 @@ export async function updateCategory(id: string, input: { name?: string; slug?: 
 
 export async function deleteCategory(id: string): Promise<void> {
   await apiFetch(`/api/admin/categories/${id}`, { method: "DELETE" });
+}
+
+// --- Reports ---
+
+export async function getReports(days?: number): Promise<Report> {
+  const qs = days ? `?days=${days}` : "";
+  return (await apiFetch(`/api/admin/reports${qs}`)) as Report;
 }
 
 // --- Reviews ---

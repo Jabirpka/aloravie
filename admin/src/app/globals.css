@@ -178,6 +178,13 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 .dept-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
 .dept-check input { width: auto; }
 
+/* Reports bar chart */
+.bars { display: flex; align-items: flex-end; gap: 6px; height: 160px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 6px; min-width: 0; }
+.bar { width: 100%; max-width: 34px; min-height: 2px; background: var(--accent); border-radius: 3px 3px 0 0; transition: height .2s ease; }
+.bar-col:hover .bar { filter: brightness(1.1); }
+.bar-x { font-size: 10px; color: var(--muted); }
+
 /* Return photos */
 .return-photos { display: flex; flex-wrap: wrap; gap: 10px; }
 .return-photos img { width: 92px; height: 92px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); }

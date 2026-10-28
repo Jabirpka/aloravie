@@ -7,9 +7,29 @@ references.
 | File | Purpose |
 |------|---------|
 | [`../ecosystem.config.js`](../ecosystem.config.js) | PM2 process config — runs the API (`:4000`), storefront (`:3000`) and admin (`:3001`). |
-| [`nginx/aloravie.conf`](nginx/aloravie.conf) | Nginx reverse proxy for the storefront (apex + www). |
-| [`nginx/admin.aloravie.conf`](nginx/admin.aloravie.conf) | Nginx reverse proxy for the admin back office. |
-| [`nginx/api.aloravie.conf`](nginx/api.aloravie.conf) | Nginx reverse proxy for the API (incl. `client_max_body_size 15M` for uploads). |
+| [`nginx/ip-staging.conf`](nginx/ip-staging.conf) | **Profile A** — IP-first preview (no domain, no HTTPS): storefront on `:80`, admin on `:8081`, API under `/api`. |
+| [`nginx/aloravie.conf`](nginx/aloravie.conf) | **Profile B** — storefront (apex + www) on your domain. |
+| [`nginx/admin.aloravie.conf`](nginx/admin.aloravie.conf) | **Profile B** — admin back office on `admin.<domain>`. |
+| [`nginx/api.aloravie.conf`](nginx/api.aloravie.conf) | **Profile B** — API on `api.<domain>` (incl. `client_max_body_size 15M` for uploads). |
+
+## Two profiles
+
+**Profile A — IP-first (staging / preview).** Run the system on the bare VPS IP to
+demo it and test end-to-end before you buy a domain. ⚠️ This is **not a payment-ready
+public launch**: a bare IP cannot get an HTTPS certificate, so it runs over plain HTTP,
+and Razorpay live payments + KYC need HTTPS on a real domain. So keep payments in
+**mock** mode here. Env for this profile:
+
+- `backend/.env`: `NODE_ENV=development`, `PAYMENT_MODE=mock`, `STORAGE_DRIVER=local`,
+  `CORS_ORIGINS=http://<IP>,http://<IP>:8081`.
+- Build web + admin with `NEXT_PUBLIC_API_URL=http://<IP>`.
+
+**Profile B — domain (production launch).** Point `aloravie.com`, `admin.`, `api.` at
+the box, use the three per-domain Nginx files, run `certbot --nginx` for HTTPS, and set
+`backend/.env` to `NODE_ENV=production` + `PAYMENT_MODE=razorpay` (+ keys +
+`RAZORPAY_WEBHOOK_SECRET`) + strong JWT secrets + `CORS_ORIGINS=https://<domain>,https://admin.<domain>`.
+Build web + admin with `NEXT_PUBLIC_API_URL=https://api.<domain>`. The backend refuses
+to boot in production if any of these are unsafe (see `backend/src/env.ts`).
 
 ## Before you use these
 

@@ -33,6 +33,58 @@ export async function createRazorpayOrder(
   return data.id;
 }
 
+/** Refund a captured Razorpay payment (full or partial). Returns the refund id. */
+export async function createRazorpayRefund(
+  paymentId: string,
+  amountMinor: number,
+  notes?: Record<string, string>,
+): Promise<string> {
+  if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
+    throw new AppError(500, "PAYMENT_CONFIG", "Razorpay keys are not configured");
+  }
+  const auth = Buffer.from(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`).toString("base64");
+  const res = await fetch(`${RZP_API}/payments/${paymentId}/refund`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Basic ${auth}` },
+    body: JSON.stringify({ amount: amountMinor, speed: "normal", ...(notes ? { notes } : {}) }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new AppError(502, "PAYMENT_PROVIDER", `Razorpay refund failed (${res.status}) ${text}`);
+  }
+  const data = (await res.json()) as { id: string };
+  return data.id;
+}
+
+/**
+ * Refund an order's payment for the given amount, marking the payment REFUNDED.
+ * Issues a real Razorpay refund for a captured online payment; for COD, unpaid,
+ * or mock orders there is nothing to reverse online, so it records an offline marker.
+ */
+export async function refundOrderPayment(
+  orderId: string,
+  amountMinor: number,
+  notes?: Record<string, string>,
+): Promise<{ refundId: string | null }> {
+  const payment = await prisma.payment.findUnique({ where: { orderId } });
+
+  // Nothing captured online to reverse (COD / unpaid): offline refund, no id.
+  if (!payment || payment.status !== "PAID" || payment.provider === "COD") {
+    return { refundId: null };
+  }
+
+  let refundId: string;
+  if (payment.provider === "RAZORPAY" && env.PAYMENT_MODE === "razorpay" && payment.providerPaymentId) {
+    refundId = await createRazorpayRefund(payment.providerPaymentId, amountMinor, notes);
+  } else {
+    // Mock / dev payment: synthesize a refund reference.
+    refundId = `rfnd_mock_${Date.now()}`;
+  }
+
+  await prisma.payment.update({ where: { orderId }, data: { status: "REFUNDED" } });
+  return { refundId };
+}
+
 function verifyRazorpaySignature(orderId: string, paymentId: string, signature: string): boolean {
   if (!env.RAZORPAY_KEY_SECRET) return false;
   const expected = createHmac("sha256", env.RAZORPAY_KEY_SECRET)

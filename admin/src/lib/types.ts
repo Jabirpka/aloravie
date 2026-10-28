@@ -276,6 +276,7 @@ export interface ReturnRecord {
   photoUrls: string[];
   items: ReturnItemSnapshot[];
   refundAmountMinor: number | null;
+  refundId: string | null;
   createdAt: string;
   order: { orderNumber: string; currency: string; placedAt: string } | null;
   customer: { id: string; name: string | null; email: string | null } | null;

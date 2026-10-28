@@ -107,6 +107,9 @@ export default function ReturnDetailPage() {
                   <dl style={{ margin: 0 }}>
                     <div className="kv"><dt>Reason</dt><dd>{REASON[r.reason] ?? r.reason}</dd></div>
                     <div className="kv"><dt className="strong">Refund value</dt><dd className="strong">{formatMoney(r.refundAmountMinor ?? total, currency)}</dd></div>
+                    {r.status === "REFUNDED" && (
+                      <div className="kv"><dt>Refund ref</dt><dd className="muted" style={{ fontSize: 12 }}>{r.refundId ?? "Offline (no online payment)"}</dd></div>
+                    )}
                   </dl>
                   {r.comment && <p style={{ marginTop: 10 }}><span className="muted">Customer note:</span> {r.comment}</p>}
                 </div>

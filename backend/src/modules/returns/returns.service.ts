@@ -1,6 +1,7 @@
 import type { ReturnReason, ReturnStatus } from "@prisma/client";
 import { prisma } from "../../prisma.js";
 import { badRequest, forbidden, notFound } from "../../lib/http.js";
+import { refundOrderPayment } from "../payments/payments.service.js";
 
 export interface ReturnItemInput {
   orderItemId: string;
@@ -128,8 +129,9 @@ export async function rejectReturn(id: string, note?: string) {
   return prisma.returnRequest.update({ where: { id }, data: { status: "REJECTED", staffNote: note }, include });
 }
 
-// Refund: compute the amount from the returned items, mark REFUNDED and the order RETURNED.
-// (Mock: records the refund; a live Razorpay refund call plugs in here.)
+// Refund: compute the amount from the returned items, issue the payment refund
+// (real Razorpay for captured online payments, offline marker otherwise), then
+// mark the return REFUNDED and the order RETURNED.
 export async function refundReturn(id: string) {
   const r = await prisma.returnRequest.findUnique({ where: { id } });
   if (!r) throw notFound("Return not found");
@@ -137,11 +139,15 @@ export async function refundReturn(id: string) {
   const items = snapshotItems(r.items);
   const refundAmountMinor = items.reduce((s, it) => s + it.unitPriceMinor * it.quantity, 0);
 
+  // External refund call happens before the transaction (never hold a DB tx open
+  // across a network call); if it throws, the return stays APPROVED to retry.
+  const { refundId } = await refundOrderPayment(r.orderId, refundAmountMinor, { returnId: id });
+
   return prisma.$transaction(async (tx) => {
     await tx.order.update({ where: { id: r.orderId }, data: { status: "RETURNED" } });
     return tx.returnRequest.update({
       where: { id },
-      data: { status: "REFUNDED", refundAmountMinor },
+      data: { status: "REFUNDED", refundAmountMinor, refundId },
       include,
     });
   });

@@ -571,6 +571,7 @@ model ReturnRequest {
   items             Json // [{ orderItemId, titleSnapshot, skuSnapshot, variantId, quantity }]
   staffNote         String?
   refundAmountMinor Int?
+  refundId          String? // Razorpay refund id, or an offline marker
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 

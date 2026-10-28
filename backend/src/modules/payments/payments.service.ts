@@ -151,6 +151,36 @@ export async function verifyRazorpayAndConfirm(
   return markOrderPaid(order.id, input.razorpayPaymentId);
 }
 
+/**
+ * Razorpay webhook: verifies the signature over the raw body, then confirms the
+ * order. A server-to-server backstop to the browser callback (markOrderPaid is
+ * idempotent, so a double-confirm is a no-op). Throws on a bad signature.
+ */
+export async function handleRazorpayWebhook(rawBody: Buffer, signature: string | undefined): Promise<void> {
+  const secret = env.RAZORPAY_WEBHOOK_SECRET;
+  if (!secret) throw new AppError(500, "PAYMENT_CONFIG", "Razorpay webhook secret is not configured");
+  if (!signature) throw unauthorized("Missing webhook signature");
+
+  const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
+  const a = Buffer.from(expected);
+  const b = Buffer.from(signature);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) throw unauthorized("Invalid webhook signature");
+
+  const event = JSON.parse(rawBody.toString("utf8")) as {
+    event?: string;
+    payload?: { payment?: { entity?: { id?: string; order_id?: string } } };
+  };
+
+  if (event.event === "payment.captured" || event.event === "order.paid") {
+    const entity = event.payload?.payment?.entity;
+    const providerOrderId = entity?.order_id;
+    if (providerOrderId) {
+      const payment = await prisma.payment.findFirst({ where: { providerOrderId } });
+      if (payment) await markOrderPaid(payment.orderId, entity?.id ?? null);
+    }
+  }
+}
+
 /** Dev-only mock confirmation (enabled when PAYMENT_MODE=mock). */
 export async function confirmMockPayment(customerId: string, orderId: string) {
   if (env.PAYMENT_MODE !== "mock") {

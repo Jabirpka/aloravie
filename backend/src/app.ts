@@ -4,8 +4,10 @@ import cors from "cors";
 import { pinoHttp } from "pino-http";
 import { env } from "./env.js";
 import { logger } from "./logger.js";
-import { UPLOADS_DIR } from "./lib/uploads.js";
+import { UPLOADS_DIR, servesUploadsLocally } from "./lib/uploads.js";
 import { notFoundHandler, errorHandler } from "./middleware/error.js";
+import { authLimiter } from "./middleware/rate-limit.js";
+import { handleRazorpayWebhook } from "./modules/payments/payments.service.js";
 import { healthRouter } from "./modules/health/health.routes.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { productRouter } from "./modules/products/products.routes.js";
@@ -32,6 +34,9 @@ import { auditMiddleware } from "./middleware/audit.js";
 export function createApp(): Express {
   const app = express();
 
+  // Behind a PaaS proxy in production so rate-limit / logging see the real client IP.
+  if (env.isProd) app.set("trust proxy", 1);
+
   app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
   app.use(
     cors({
@@ -39,15 +44,25 @@ export function createApp(): Express {
       credentials: true,
     }),
   );
+
+  // Razorpay webhook needs the raw body for signature verification, so it is
+  // mounted before the JSON body parser.
+  app.post("/api/payments/webhook", express.raw({ type: "*/*" }), (req, res, next) => {
+    handleRazorpayWebhook(req.body as Buffer, req.header("x-razorpay-signature") ?? undefined)
+      .then(() => res.json({ ok: true }))
+      .catch(next);
+  });
+
   app.use(express.json({ limit: "1mb" }));
 
-  // Uploaded images (return photos, etc.), served for the storefront and admin.
-  app.use("/uploads", express.static(UPLOADS_DIR));
+  // Uploaded images (return photos, etc.). Served locally in dev; in production
+  // STORAGE_DRIVER=s3 serves them straight from object storage instead.
+  if (servesUploadsLocally) app.use("/uploads", express.static(UPLOADS_DIR));
   app.use(pinoHttp({ logger }));
 
   // Routes
   app.use("/", healthRouter);
-  app.use("/api/auth", authRouter);
+  app.use("/api/auth", authLimiter, authRouter);
   app.use("/api/products", productRouter);
   app.use("/api/customers", customerRouter);
   app.use("/api/checkout", checkoutRouter);

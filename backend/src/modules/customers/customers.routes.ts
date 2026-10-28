@@ -4,6 +4,7 @@ import { asyncHandler, unauthorized } from "../../lib/http.js";
 import { authenticateCustomer } from "../../middleware/customer-auth.js";
 import * as customers from "./customers.service.js";
 import * as wishlist from "../wishlist/wishlist.service.js";
+import { authLimiter } from "../../middleware/rate-limit.js";
 
 export const customerRouter: Router = Router();
 
@@ -32,6 +33,7 @@ const addressSchema = z.object({
 
 customerRouter.post(
   "/register",
+  authLimiter,
   asyncHandler(async (req, res) => {
     const result = await customers.register(registerSchema.parse(req.body));
     res.status(201).json(result);
@@ -40,6 +42,7 @@ customerRouter.post(
 
 customerRouter.post(
   "/login",
+  authLimiter,
   asyncHandler(async (req, res) => {
     res.json(await customers.login(loginSchema.parse(req.body)));
   }),
@@ -47,6 +50,7 @@ customerRouter.post(
 
 customerRouter.post(
   "/refresh",
+  authLimiter,
   asyncHandler(async (req, res) => {
     res.json(await customers.refresh(refreshSchema.parse(req.body).refreshToken));
   }),

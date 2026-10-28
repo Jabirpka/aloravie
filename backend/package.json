@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "check-storage": "tsx scripts/check-storage.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

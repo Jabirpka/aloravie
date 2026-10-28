@@ -11,6 +11,7 @@ references.
 | [`nginx/aloravie.conf`](nginx/aloravie.conf) | **Profile B** — storefront (apex + www) on your domain. |
 | [`nginx/admin.aloravie.conf`](nginx/admin.aloravie.conf) | **Profile B** — admin back office on `admin.<domain>`. |
 | [`nginx/api.aloravie.conf`](nginx/api.aloravie.conf) | **Profile B** — API on `api.<domain>` (incl. `client_max_body_size 15M` for uploads). |
+| [`R2-SETUP.md`](R2-SETUP.md) | Optional — move image/upload storage to Cloudflare R2 (durable + CDN). Env-only; verify with `npm run check-storage`. |
 
 ## Two profiles
 

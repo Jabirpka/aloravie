@@ -55,6 +55,37 @@
   place-items: center;
   padding: 0 5px;
 }
+/* Hamburger (mobile only) + the dropdown it opens */
+.site-actions { margin-left: auto; }
+.nav-toggle {
+  display: none;
+  background: none;
+  border: 0;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text);
+  cursor: pointer;
+  padding: 2px 4px;
+  margin-left: 2px;
+}
+.nav-toggle:hover { color: var(--accent); }
+.mobile-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-block: 6px 16px;
+}
+.mobile-nav a, .mobile-nav .link-btn {
+  padding: 12px 2px;
+  font-size: 15px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+@media (min-width: 861px) {
+  .nav-toggle, .mobile-nav { display: none !important; }
+}
 
 /* ---------------- Footer ---------------- */
 .site-footer { border-top: 1px solid var(--line); margin-top: 48px; }
@@ -667,10 +698,15 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
   .product-grid { grid-template-columns: repeat(2, 1fr); }
   .system-feats { grid-template-columns: repeat(2, 1fr); }
   .site-nav { display: none; }
+  .nav-toggle { display: inline-flex; align-items: center; }
+  .theme-toggle { display: none; } /* moved into the hamburger menu */
+  .site-header-inner { gap: 14px; }
 }
 @media (max-width: 460px) {
   .product-grid { grid-template-columns: 1fr 1fr; gap: 16px 14px; }
   .brand-link { font-size: 22px; }
   .add-btn { min-width: 100%; }
   .field-grid { grid-template-columns: 1fr; }
+  /* 16px inputs stop iOS Safari from zooming in when a field is focused. */
+  input, select, textarea { font-size: 16px; }
 }

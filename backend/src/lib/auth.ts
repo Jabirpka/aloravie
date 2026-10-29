@@ -80,3 +80,22 @@ export function hashRefreshToken(token: string): string {
 export function refreshTokenExpiry(): Date {
   return new Date(Date.now() + env.REFRESH_TOKEN_TTL_DAYS * 86400 * 1000);
 }
+
+// --- Password reset ---
+
+/** Expiry for a password-reset link: short-lived (1 hour). */
+export function passwordResetExpiry(): Date {
+  return new Date(Date.now() + 60 * 60 * 1000);
+}
+
+/**
+ * A short, human-typeable temporary password that staff can read out to a
+ * locked-out customer. Uses an unambiguous alphabet (no 0/O/1/l/I).
+ */
+export function generateTempPassword(): string {
+  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const bytes = randomBytes(10);
+  let out = "";
+  for (let i = 0; i < bytes.length; i++) out += alphabet[bytes[i]! % alphabet.length];
+  return out;
+}

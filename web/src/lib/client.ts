@@ -150,6 +150,22 @@ export async function fetchMe(): Promise<CustomerAccount | null> {
   }
 }
 
+export async function forgotPassword(email: string): Promise<void> {
+  await rawFetch("/api/customers/forgot", { method: "POST", body: JSON.stringify({ email }) });
+}
+
+export async function resetPassword(token: string, password: string): Promise<void> {
+  await rawFetch("/api/customers/reset", { method: "POST", body: JSON.stringify({ token, password }) });
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await rawFetch(
+    "/api/customers/me/password",
+    { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) },
+    true,
+  );
+}
+
 export async function logoutCustomer(): Promise<void> {
   const refreshToken = read(REFRESH_KEY);
   if (refreshToken) {

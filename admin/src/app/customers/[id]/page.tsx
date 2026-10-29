@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { useAuth } from "@/components/AdminAuthProvider";
-import { getCustomer } from "@/lib/api";
+import { ApiRequestError, getCustomer, resetCustomerPassword } from "@/lib/api";
 import { formatMoney } from "@/lib/money";
 import type { CustomerDetail } from "@/lib/types";
 
@@ -14,6 +14,27 @@ export default function CustomerDetailPage() {
   const { user, loading } = useAuth();
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [resetBusy, setResetBusy] = useState(false);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  async function doReset() {
+    const ok = window.confirm(
+      "Only reset after you've confirmed the customer's identity (order number + registered email/phone).\n\nThis sets a temporary password and signs them out everywhere. Continue?",
+    );
+    if (!ok) return;
+    setResetBusy(true);
+    setResetError(null);
+    setTempPassword(null);
+    try {
+      const res = await resetCustomerPassword(params.id);
+      setTempPassword(res.tempPassword);
+    } catch (err) {
+      setResetError(err instanceof ApiRequestError ? err.message : "Couldn't reset the password.");
+    } finally {
+      setResetBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (loading || !user) return;
@@ -81,6 +102,25 @@ export default function CustomerDetailPage() {
                     <div className="kv"><dt>Orders</dt><dd>{customer.orders.length}</dd></div>
                     <div className="kv"><dt className="strong">Lifetime spend</dt><dd className="strong">{formatMoney(lifetime ?? 0)}</dd></div>
                   </dl>
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="card-head"><h2>Account access</h2></div>
+                <div className="card-body">
+                  {tempPassword ? (
+                    <>
+                      <p className="muted" style={{ marginTop: 0 }}>Temporary password — read or send this to the customer, then have them change it after signing in:</p>
+                      <p className="strong" style={{ fontSize: 18, letterSpacing: 1, userSelect: "all", background: "var(--surface, #f6f3ee)", padding: "8px 12px", borderRadius: 6 }}>{tempPassword}</p>
+                      <p className="muted" style={{ fontSize: 12 }}>Shown once. They&rsquo;ll be prompted to set their own password on first sign-in.</p>
+                    </>
+                  ) : (
+                    <p className="muted" style={{ marginTop: 0 }}>Reset the password for a locked-out customer. Verify who they are first.</p>
+                  )}
+                  {resetError && <p className="form-error">{resetError}</p>}
+                  <button className="btn sm" disabled={resetBusy} onClick={doReset}>
+                    {resetBusy ? "Resetting…" : tempPassword ? "Reset again" : "Reset password"}
+                  </button>
                 </div>
               </div>
 

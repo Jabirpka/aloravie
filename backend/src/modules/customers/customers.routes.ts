@@ -17,6 +17,15 @@ const registerSchema = z.object({
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(1) });
 const refreshSchema = z.object({ refreshToken: z.string().min(1) });
+const forgotSchema = z.object({ email: z.string().email() });
+const resetSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
 
 const addressSchema = z.object({
   type: z.enum(["SHIPPING", "BILLING"]).optional(),
@@ -64,12 +73,45 @@ customerRouter.post(
   }),
 );
 
+// Forgot password: always answers ok (never reveals whether the email exists).
+customerRouter.post(
+  "/forgot",
+  authLimiter,
+  asyncHandler(async (req, res) => {
+    await customers.requestPasswordReset(forgotSchema.parse(req.body).email);
+    res.json({ ok: true });
+  }),
+);
+
+// Complete a reset with the emailed token.
+customerRouter.post(
+  "/reset",
+  authLimiter,
+  asyncHandler(async (req, res) => {
+    const { token, password } = resetSchema.parse(req.body);
+    await customers.resetPassword(token, password);
+    res.json({ ok: true });
+  }),
+);
+
 customerRouter.get(
   "/me",
   authenticateCustomer,
   asyncHandler(async (req, res) => {
     if (!req.customer) throw unauthorized();
     res.json({ customer: await customers.getCustomerById(req.customer.sub) });
+  }),
+);
+
+// Signed-in customer changes their own password.
+customerRouter.post(
+  "/me/password",
+  authenticateCustomer,
+  asyncHandler(async (req, res) => {
+    if (!req.customer) throw unauthorized();
+    const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+    await customers.changePassword(req.customer.sub, currentPassword, newPassword);
+    res.json({ ok: true });
   }),
 );
 

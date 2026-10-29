@@ -10,6 +10,9 @@ const schema = z.object({
   ACCESS_TOKEN_TTL: z.string().default("15m"),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
   CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:3001,http://localhost:5173"),
+  // Public storefront base URL, used to build links in emails (e.g. password reset).
+  // Defaults to the first CORS origin when unset.
+  STOREFRONT_URL: z.string().url().optional(),
 
   // Payments
   PAYMENT_MODE: z.enum(["mock", "razorpay"]).default("mock"),
@@ -110,10 +113,13 @@ if (!parsed.success) {
 
 const raw = parsed.data;
 
+const corsOrigins = raw.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean);
+
 export const env = {
   ...raw,
   isProd: raw.NODE_ENV === "production",
-  corsOrigins: raw.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean),
+  corsOrigins,
+  storefrontUrl: raw.STOREFRONT_URL ?? corsOrigins[0] ?? "http://localhost:3000",
 };
 
 export type Env = typeof env;

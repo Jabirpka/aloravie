@@ -8,6 +8,7 @@ interface TemplateData {
   name: string;
   orderNumber?: string;
   amount?: string;
+  link?: string;
 }
 
 function template(event: NotificationEvent, d: TemplateData): { subject: string; body: string } {
@@ -31,6 +32,11 @@ function template(event: NotificationEvent, d: TemplateData): { subject: string;
       return {
         subject: `New reply from Aloravie support`,
         body: `Hi ${d.name}, our team has replied to your message. Open the app or site to continue the conversation. — Aloravie`,
+      };
+    case "PASSWORD_RESET":
+      return {
+        subject: `Reset your Aloravie password`,
+        body: `Hi ${d.name}, we received a request to reset your password. Open this link to choose a new one (it expires in 1 hour):\n\n${d.link}\n\nIf you didn't ask for this, you can ignore this email — your password won't change. — Aloravie`,
       };
   }
 }
@@ -146,6 +152,23 @@ export async function notifySupportReply(customer: {
     }
   } catch (err) {
     logger.error({ err }, "notifySupportReply failed");
+  }
+}
+
+/** Email a customer a password-reset link. Never throws. */
+export async function notifyPasswordReset(
+  customer: { name: string | null; email: string },
+  link: string,
+): Promise<void> {
+  try {
+    const name = (customer.name ?? "there").split(" ")[0] ?? "there";
+    const msg = template("PASSWORD_RESET", { name, link });
+    const status = await deliver("EMAIL", customer.email, msg.subject, msg.body);
+    await prisma.notificationLog.create({
+      data: { channel: "EMAIL", event: "PASSWORD_RESET", recipient: customer.email, subject: msg.subject, body: msg.body, status },
+    });
+  } catch (err) {
+    logger.error({ err }, "notifyPasswordReset failed");
   }
 }
 

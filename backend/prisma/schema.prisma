@@ -69,12 +69,15 @@ model Customer {
   phone        String?  @unique
   name         String?
   passwordHash String? // null for marketplace/guest customers who never set one
+  // Set when staff issue a temporary password; the storefront nudges the customer to change it.
+  mustChangePassword Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   addresses             Address[]
   orders                Order[]
   refreshTokens         CustomerRefreshToken[]
+  passwordResets        PasswordResetToken[]
   supportConversations  SupportConversation[]
   returns               ReturnRequest[]
   reviews               Review[]
@@ -109,6 +112,21 @@ model CustomerRefreshToken {
 
   @@index([customerId])
   @@map("customer_refresh_tokens")
+}
+
+// Single-use, short-lived tokens for the "forgot password" email flow. Only the
+// hash is stored; the raw token lives only in the emailed link.
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([customerId])
+  @@map("password_reset_tokens")
 }
 
 enum AddressType {
@@ -489,6 +507,7 @@ enum NotificationEvent {
   ORDER_SHIPPED
   ORDER_DELIVERED
   SUPPORT_REPLY
+  PASSWORD_RESET
 }
 
 enum NotificationStatus {

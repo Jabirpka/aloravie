@@ -1,5 +1,6 @@
 import type { Customer } from "@prisma/client";
 import { prisma } from "../../prisma.js";
+import { env } from "../../env.js";
 import {
   hashPassword,
   verifyPassword,
@@ -7,14 +8,18 @@ import {
   generateRefreshToken,
   hashRefreshToken,
   refreshTokenExpiry,
+  passwordResetExpiry,
+  generateTempPassword,
 } from "../../lib/auth.js";
-import { conflict, unauthorized, notFound } from "../../lib/http.js";
+import { badRequest, conflict, unauthorized, notFound } from "../../lib/http.js";
+import { notifyPasswordReset } from "../notifications/notifications.service.js";
 
 export interface PublicCustomer {
   id: string;
   email: string | null;
   name: string | null;
   phone: string | null;
+  mustChangePassword: boolean;
 }
 
 export interface CustomerAuthResult {
@@ -24,7 +29,7 @@ export interface CustomerAuthResult {
 }
 
 function toPublic(c: Customer): PublicCustomer {
-  return { id: c.id, email: c.email, name: c.name, phone: c.phone };
+  return { id: c.id, email: c.email, name: c.name, phone: c.phone, mustChangePassword: c.mustChangePassword };
 }
 
 async function issueTokens(customer: Customer): Promise<CustomerAuthResult> {
@@ -145,4 +150,80 @@ export async function deleteAddress(customerId: string, id: string) {
   const existing = await prisma.address.findFirst({ where: { id, customerId } });
   if (!existing) throw notFound("Address not found");
   await prisma.address.delete({ where: { id } });
+}
+
+// --- Passwords ---
+
+function revokeAllSessions(customerId: string) {
+  return prisma.customerRefreshToken.updateMany({
+    where: { customerId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+}
+
+/** Signed-in customer changes their own password (must know the current one). */
+export async function changePassword(customerId: string, currentPassword: string, newPassword: string) {
+  const customer = await prisma.customer.findUnique({ where: { id: customerId } });
+  if (!customer) throw notFound("Account not found");
+  if (!customer.passwordHash) throw badRequest("This account has no password set");
+  const ok = await verifyPassword(currentPassword, customer.passwordHash);
+  if (!ok) throw badRequest("Your current password is incorrect");
+  await prisma.customer.update({
+    where: { id: customerId },
+    data: { passwordHash: await hashPassword(newPassword), mustChangePassword: false },
+  });
+}
+
+/**
+ * Start the "forgot password" flow. Creates a single-use token and emails the
+ * link. Resolves the same way whether or not the email exists, so the endpoint
+ * never reveals which emails are registered.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const customer = await prisma.customer.findUnique({ where: { email } });
+  if (!customer || !customer.email || !customer.passwordHash) return;
+
+  const rawToken = generateRefreshToken();
+  await prisma.passwordResetToken.create({
+    data: { customerId: customer.id, tokenHash: hashRefreshToken(rawToken), expiresAt: passwordResetExpiry() },
+  });
+
+  const link = `${env.storefrontUrl}/reset-password?token=${rawToken}`;
+  await notifyPasswordReset({ name: customer.name, email: customer.email }, link);
+}
+
+/** Complete a reset using the emailed token. Single-use; also ends other sessions. */
+export async function resetPassword(rawToken: string, newPassword: string): Promise<void> {
+  const token = await prisma.passwordResetToken.findUnique({ where: { tokenHash: hashRefreshToken(rawToken) } });
+  if (!token || token.usedAt || token.expiresAt < new Date()) {
+    throw badRequest("This reset link is invalid or has expired. Please request a new one.");
+  }
+  await prisma.$transaction([
+    prisma.customer.update({
+      where: { id: token.customerId },
+      data: { passwordHash: await hashPassword(newPassword), mustChangePassword: false },
+    }),
+    prisma.passwordResetToken.update({ where: { id: token.id }, data: { usedAt: new Date() } }),
+    prisma.customerRefreshToken.updateMany({
+      where: { customerId: token.customerId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    }),
+  ]);
+}
+
+/**
+ * Staff-assisted reset (customer care). Sets a temporary password, flags the
+ * account so the storefront nudges a change, ends existing sessions, and returns
+ * the temp password once for the agent to pass to the customer.
+ */
+export async function adminResetCustomerPassword(customerId: string): Promise<{ tempPassword: string; email: string | null }> {
+  const customer = await prisma.customer.findUnique({ where: { id: customerId } });
+  if (!customer) throw notFound("Customer not found");
+  const tempPassword = generateTempPassword();
+  await prisma.customer.update({
+    where: { id: customerId },
+    data: { passwordHash: await hashPassword(tempPassword), mustChangePassword: true },
+  });
+  await revokeAllSessions(customerId);
+  return { tempPassword, email: customer.email };
 }

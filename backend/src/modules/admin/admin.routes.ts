@@ -6,6 +6,7 @@ import { requireAccess } from "../../middleware/access.js";
 import { uploadImages, fileUrl } from "../../lib/uploads.js";
 import * as admin from "./admin.service.js";
 import * as products from "../products/products.service.js";
+import * as customerAccounts from "../customers/customers.service.js";
 
 export const adminRouter: Router = Router();
 
@@ -189,5 +190,16 @@ adminRouter.get(
   asyncHandler(async (req, res) => {
     const { id } = z.object({ id: z.string().min(1) }).parse(req.params);
     res.json({ customer: await admin.getCustomer(id) });
+  }),
+);
+
+// Customer-care password reset: issues a temporary password for a locked-out
+// customer. Returned once for the agent to pass on; recorded in the audit log.
+adminRouter.post(
+  "/customers/:id/reset-password",
+  requireAccess("customers"),
+  asyncHandler(async (req, res) => {
+    const { id } = z.object({ id: z.string().min(1) }).parse(req.params);
+    res.json(await customerAccounts.adminResetCustomerPassword(id));
   }),
 );

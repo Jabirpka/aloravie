@@ -67,6 +67,7 @@ export interface CustomerAccount {
   email: string | null;
   name: string | null;
   phone: string | null;
+  mustChangePassword: boolean;
 }
 
 export interface AddressInput {

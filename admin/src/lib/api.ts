@@ -232,6 +232,14 @@ export async function getCustomer(id: string): Promise<CustomerDetail> {
   return ((await apiFetch(`/api/admin/customers/${id}`)) as { customer: CustomerDetail }).customer;
 }
 
+// Customer-care password reset: issues a temporary password (returned once).
+export async function resetCustomerPassword(id: string): Promise<{ tempPassword: string; email: string | null }> {
+  return (await apiFetch(`/api/admin/customers/${id}/reset-password`, { method: "POST" })) as {
+    tempPassword: string;
+    email: string | null;
+  };
+}
+
 // --- Fulfilment ---
 
 export async function createShipment(orderId: string): Promise<Shipment> {

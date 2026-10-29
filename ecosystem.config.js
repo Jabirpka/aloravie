@@ -15,7 +15,8 @@ module.exports = {
       name: "aloravie-api",
       cwd: "./backend",
       script: "dist/index.js",
-      env: { NODE_ENV: "production" },
+      // NODE_ENV and all other settings come from backend/.env (loaded via dotenv),
+      // so that one file is the single source of truth for dev vs production mode.
       instances: 1,
       exec_mode: "fork",
       max_memory_restart: "400M",

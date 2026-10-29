@@ -7,7 +7,16 @@ import { useAuth } from "@/components/AdminAuthProvider";
 import { listReturns } from "@/lib/api";
 import type { ReturnRecord } from "@/lib/types";
 
-const STATUSES: (ReturnRecord["status"] | "ALL")[] = ["REQUESTED", "APPROVED", "REFUNDED", "REJECTED", "ALL"];
+const STATUSES: (ReturnRecord["status"] | "ALL")[] = ["REQUESTED", "APPROVED", "PICKUP_BOOKED", "IN_TRANSIT", "RECEIVED", "REFUNDED", "REJECTED", "ALL"];
+const STATUS_LABEL: Record<ReturnRecord["status"] | "ALL", string> = {
+  REQUESTED: "Requested", APPROVED: "Approved", PICKUP_BOOKED: "Pickup booked", IN_TRANSIT: "In transit",
+  RECEIVED: "Received", REFUNDED: "Refunded", REJECTED: "Rejected", ALL: "All",
+};
+function pillClass(s: ReturnRecord["status"]): string {
+  if (s === "REFUNDED" || s === "RECEIVED" || s === "APPROVED") return "ok";
+  if (s === "REJECTED") return "cancelled";
+  return "pending";
+}
 const REASON: Record<string, string> = {
   WRONG_SIZE: "Wrong size", DAMAGED: "Damaged", NOT_AS_DESCRIBED: "Not as described",
   CHANGED_MIND: "Changed mind", OTHER: "Other",
@@ -39,7 +48,7 @@ export default function ReturnsPage() {
       <div className="filters">
         {STATUSES.map((s) => (
           <button key={s} className={`chip ${filter === s ? "active" : ""}`} onClick={() => setFilter(s)}>
-            {s === "ALL" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()}
+            {STATUS_LABEL[s]}
           </button>
         ))}
       </div>
@@ -63,7 +72,7 @@ export default function ReturnsPage() {
                       <td>{REASON[r.reason] ?? r.reason}</td>
                       <td className="num">{r.items.reduce((n, i) => n + i.quantity, 0)}</td>
                       <td>{r.photoUrls.length || "—"}</td>
-                      <td><span className={`pill ${r.status === "REFUNDED" || r.status === "APPROVED" ? "ok" : r.status === "REJECTED" ? "cancelled" : "pending"}`}>{r.status}</span></td>
+                      <td><span className={`pill ${pillClass(r.status)}`}>{STATUS_LABEL[r.status]}</span></td>
                       <td className="muted">{new Date(r.createdAt).toLocaleDateString("en-IN")}</td>
                     </tr>
                   ))}

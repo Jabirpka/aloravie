@@ -379,12 +379,27 @@ export async function getReturn(id: string): Promise<ReturnRecord> {
 
 export async function decideReturn(
   id: string,
-  action: "approve" | "reject" | "refund",
+  action: "approve" | "reject",
   note?: string,
 ): Promise<ReturnRecord> {
   return ((await apiFetch(`/api/admin/returns/${id}/${action}`, {
     method: "POST",
     body: note ? JSON.stringify({ note }) : undefined,
+  })) as { return: ReturnRecord }).return;
+}
+
+// Return reverse-logistics steps.
+async function returnAction(id: string, action: "pickup" | "sync" | "receive"): Promise<ReturnRecord> {
+  return ((await apiFetch(`/api/admin/returns/${id}/${action}`, { method: "POST" })) as { return: ReturnRecord }).return;
+}
+export const bookReturnPickup = (id: string) => returnAction(id, "pickup");
+export const syncReturn = (id: string) => returnAction(id, "sync");
+export const receiveReturn = (id: string) => returnAction(id, "receive");
+
+export async function inspectReturn(id: string, passed: boolean, note?: string): Promise<ReturnRecord> {
+  return ((await apiFetch(`/api/admin/returns/${id}/inspect`, {
+    method: "POST",
+    body: JSON.stringify({ passed, ...(note ? { note } : {}) }),
   })) as { return: ReturnRecord }).return;
 }
 

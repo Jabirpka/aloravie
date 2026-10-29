@@ -17,6 +17,9 @@ const REASON_LABEL: Record<string, string> = {
 const STATUS_LABEL: Record<string, string> = {
   REQUESTED: "Requested",
   APPROVED: "Approved",
+  PICKUP_BOOKED: "Pickup booked",
+  IN_TRANSIT: "On its way back",
+  RECEIVED: "Received — being checked",
   REJECTED: "Rejected",
   REFUNDED: "Refunded",
 };
@@ -68,6 +71,14 @@ export default function ReturnsPage() {
               {r.staffNote && (
                 <div className="return-note" style={{ marginTop: 6 }}>
                   <span className="muted" style={{ fontSize: 12 }}>Note from the team:</span> {r.staffNote}
+                </div>
+              )}
+              {(r.pickupAwb || r.returnEvents.length > 0) && (
+                <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                  {r.pickupAwb && <>Pickup: {r.pickupCourier ?? "Courier"} · AWB {r.pickupAwb}. </>}
+                  {r.returnEvents.length > 0 && (
+                    <>Latest: {r.returnEvents[r.returnEvents.length - 1]!.status} ({new Date(r.returnEvents[r.returnEvents.length - 1]!.occurredAt).toLocaleDateString("en-IN")})</>
+                  )}
                 </div>
               )}
               {r.photoUrls.length > 0 && <div className="muted" style={{ fontSize: 12 }}>{r.photoUrls.length} photo(s) attached</div>}

@@ -105,7 +105,7 @@ export interface ReviewSummary {
 }
 
 export type ReturnReason = "WRONG_SIZE" | "DAMAGED" | "NOT_AS_DESCRIBED" | "CHANGED_MIND" | "OTHER";
-export type ReturnStatus = "REQUESTED" | "APPROVED" | "REJECTED" | "REFUNDED";
+export type ReturnStatus = "REQUESTED" | "APPROVED" | "PICKUP_BOOKED" | "IN_TRANSIT" | "RECEIVED" | "REJECTED" | "REFUNDED";
 
 export interface ReturnRequest {
   id: string;
@@ -113,6 +113,10 @@ export interface ReturnRequest {
   reason: ReturnReason;
   comment: string | null;
   staffNote: string | null;
+  pickupCourier: string | null;
+  pickupAwb: string | null;
+  pickupTrackingUrl: string | null;
+  returnEvents: { id: string; status: string; location: string | null; occurredAt: string }[];
   photoUrls: string[];
   items: { orderItemId: string; titleSnapshot: string; skuSnapshot: string; quantity: number; unitPriceMinor: number }[];
   refundAmountMinor: number | null;

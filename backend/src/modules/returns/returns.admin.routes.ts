@@ -55,10 +55,38 @@ returnAdminRouter.post(
 );
 
 returnAdminRouter.post(
-  "/returns/:id/refund",
+  "/returns/:id/pickup",
   guard,
   asyncHandler(async (req, res) => {
     const { id } = idParam.parse(req.params);
-    res.json({ return: await returns.refundReturn(id) });
+    res.json({ return: await returns.bookPickup(id) });
+  }),
+);
+
+returnAdminRouter.post(
+  "/returns/:id/sync",
+  guard,
+  asyncHandler(async (req, res) => {
+    const { id } = idParam.parse(req.params);
+    res.json({ return: await returns.syncReturnTracking(id) });
+  }),
+);
+
+returnAdminRouter.post(
+  "/returns/:id/receive",
+  guard,
+  asyncHandler(async (req, res) => {
+    const { id } = idParam.parse(req.params);
+    res.json({ return: await returns.markReceived(id) });
+  }),
+);
+
+returnAdminRouter.post(
+  "/returns/:id/inspect",
+  guard,
+  asyncHandler(async (req, res) => {
+    const { id } = idParam.parse(req.params);
+    const { passed, note } = z.object({ passed: z.boolean(), note: z.string().optional() }).parse(req.body ?? {});
+    res.json({ return: await returns.inspectReturn(id, passed, note) });
   }),
 );

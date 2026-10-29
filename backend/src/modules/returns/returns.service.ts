@@ -1,7 +1,8 @@
-import type { ReturnReason, ReturnStatus } from "@prisma/client";
+import type { Prisma, ReturnReason, ReturnStatus } from "@prisma/client";
 import { prisma } from "../../prisma.js";
 import { badRequest, forbidden, notFound } from "../../lib/http.js";
 import { refundOrderPayment } from "../payments/payments.service.js";
+import { bookReturnPickup as courierBookReturnPickup, courierMode, nextReturnMockUpdate } from "../fulfilment/courier.service.js";
 
 export interface ReturnItemInput {
   orderItemId: string;
@@ -23,7 +24,19 @@ const RETURNABLE_ORDER = ["CONFIRMED", "PACKED", "SHIPPED", "DELIVERED"];
 const include = {
   order: { select: { orderNumber: true, currency: true, placedAt: true } },
   customer: { select: { id: true, name: true, email: true } },
+  returnEvents: { orderBy: { occurredAt: "asc" } },
 } as const;
+
+interface PickupAddress {
+  name: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country?: string;
+}
 
 // --- Customer ---
 
@@ -98,56 +111,155 @@ function snapshotItems(items: unknown): ReturnItemSnapshot[] {
   return (items as ReturnItemSnapshot[]) ?? [];
 }
 
-// Approve: restock the returned units to the default location.
+// Restock the returned units to the default location (used after a passed inspection).
+async function restockItems(tx: Prisma.TransactionClient, items: ReturnItemSnapshot[]) {
+  let location = await tx.location.findFirst({ where: { isDefault: true } });
+  if (!location) location = await tx.location.findFirst();
+  if (!location) return;
+  for (const it of items) {
+    await tx.inventoryItem.updateMany({
+      where: { variantId: it.variantId, locationId: location.id },
+      data: { onHand: { increment: it.quantity } },
+    });
+  }
+}
+
+// Approve the request. Stock is NOT returned yet — that happens only once the
+// item is physically back and passes inspection.
 export async function approveReturn(id: string, note?: string) {
   const r = await prisma.returnRequest.findUnique({ where: { id } });
   if (!r) throw notFound("Return not found");
   if (r.status !== "REQUESTED") throw badRequest(`Return is already ${r.status.toLowerCase()}`);
-
-  let location = await prisma.location.findFirst({ where: { isDefault: true } });
-  if (!location) location = await prisma.location.findFirst();
-  const loc = location;
-  const items = snapshotItems(r.items);
-
-  return prisma.$transaction(async (tx) => {
-    if (loc) {
-      for (const it of items) {
-        await tx.inventoryItem.updateMany({
-          where: { variantId: it.variantId, locationId: loc.id },
-          data: { onHand: { increment: it.quantity } },
-        });
-      }
-    }
-    return tx.returnRequest.update({ where: { id }, data: { status: "APPROVED", staffNote: note }, include });
-  });
+  return prisma.returnRequest.update({ where: { id }, data: { status: "APPROVED", staffNote: note }, include });
 }
 
 export async function rejectReturn(id: string, note?: string) {
   const r = await prisma.returnRequest.findUnique({ where: { id } });
   if (!r) throw notFound("Return not found");
-  if (r.status !== "REQUESTED") throw badRequest(`Return is already ${r.status.toLowerCase()}`);
+  if (r.status !== "REQUESTED" && r.status !== "RECEIVED") {
+    throw badRequest(`A ${r.status.toLowerCase()} return can't be rejected`);
+  }
   return prisma.returnRequest.update({ where: { id }, data: { status: "REJECTED", staffNote: note }, include });
 }
 
-// Refund: compute the amount from the returned items, issue the payment refund
-// (real Razorpay for captured online payments, offline marker otherwise), then
-// mark the return REFUNDED and the order RETURNED.
-export async function refundReturn(id: string) {
+// Book a reverse pickup: a courier collects the item from the customer's address.
+export async function bookPickup(id: string) {
   const r = await prisma.returnRequest.findUnique({ where: { id } });
   if (!r) throw notFound("Return not found");
-  if (r.status !== "APPROVED") throw badRequest("Approve the return before refunding");
-  const items = snapshotItems(r.items);
-  const refundAmountMinor = items.reduce((s, it) => s + it.unitPriceMinor * it.quantity, 0);
+  if (r.status !== "APPROVED") throw badRequest("Approve the return before booking a pickup");
 
+  const order = await prisma.order.findUnique({ where: { id: r.orderId } });
+  const addr = order?.shippingAddress as unknown as PickupAddress | null;
+  if (!addr) throw badRequest("The order has no address to collect from");
+
+  const booking = await courierBookReturnPickup({ orderNumber: order!.orderNumber, shipTo: addr });
+
+  return prisma.$transaction(async (tx) => {
+    await tx.returnTrackingEvent.create({
+      data: { returnId: id, status: `Pickup booked (${booking.courierName})`, occurredAt: new Date() },
+    });
+    return tx.returnRequest.update({
+      where: { id },
+      data: {
+        status: "PICKUP_BOOKED",
+        pickupProvider: booking.provider,
+        pickupCourier: booking.courierName,
+        pickupAwb: booking.awb || null,
+        pickupTrackingUrl: booking.trackingUrl || null,
+        pickupStatus: "LABEL_READY",
+        pickupBookedAt: new Date(),
+      },
+      include,
+    });
+  });
+}
+
+// Advance the return's tracking. Mock steps one stage per call; reaching the
+// warehouse flips the return to RECEIVED.
+export async function syncReturnTracking(id: string) {
+  const r = await prisma.returnRequest.findUnique({ where: { id } });
+  if (!r) throw notFound("Return not found");
+  if (r.status !== "PICKUP_BOOKED" && r.status !== "IN_TRANSIT") {
+    throw badRequest("This return isn't out for pickup");
+  }
+  if (courierMode() === "shiprocket") {
+    throw badRequest("Live Shiprocket tracking arrives via webhook — use “Mark received” when the item arrives.");
+  }
+
+  const update = nextReturnMockUpdate(r.pickupStatus);
+  if (!update) return prisma.returnRequest.findUniqueOrThrow({ where: { id }, include });
+  const received = update.status === "DELIVERED";
+
+  return prisma.$transaction(async (tx) => {
+    await tx.returnTrackingEvent.create({
+      data: { returnId: id, status: update.label, location: update.location ?? null, occurredAt: update.occurredAt },
+    });
+    return tx.returnRequest.update({
+      where: { id },
+      data: {
+        pickupStatus: update.status,
+        status: received ? "RECEIVED" : "IN_TRANSIT",
+        ...(received ? { receivedAt: new Date() } : {}),
+      },
+      include,
+    });
+  });
+}
+
+// Mark the item physically received (manual alternative to tracking, or for a
+// customer who ships it back themselves).
+export async function markReceived(id: string) {
+  const r = await prisma.returnRequest.findUnique({ where: { id } });
+  if (!r) throw notFound("Return not found");
+  if (!["APPROVED", "PICKUP_BOOKED", "IN_TRANSIT"].includes(r.status)) {
+    throw badRequest(`A ${r.status.toLowerCase()} return can't be marked received`);
+  }
+  return prisma.$transaction(async (tx) => {
+    await tx.returnTrackingEvent.create({
+      data: { returnId: id, status: "Received at warehouse", occurredAt: new Date() },
+    });
+    return tx.returnRequest.update({
+      where: { id },
+      data: { status: "RECEIVED", receivedAt: new Date(), ...(r.pickupStatus ? { pickupStatus: "DELIVERED" } : {}) },
+      include,
+    });
+  });
+}
+
+// Physical check after receipt. Pass → restock + refund + order RETURNED.
+// Fail → reject with no refund and no restock.
+export async function inspectReturn(id: string, passed: boolean, note?: string) {
+  const r = await prisma.returnRequest.findUnique({ where: { id } });
+  if (!r) throw notFound("Return not found");
+  if (r.status !== "RECEIVED") throw badRequest("Mark the return received before inspecting it");
+  const items = snapshotItems(r.items);
+
+  if (!passed) {
+    return prisma.returnRequest.update({
+      where: { id },
+      data: { status: "REJECTED", inspectedAt: new Date(), inspectionPassed: false, inspectionNote: note },
+      include,
+    });
+  }
+
+  const refundAmountMinor = items.reduce((s, it) => s + it.unitPriceMinor * it.quantity, 0);
   // External refund call happens before the transaction (never hold a DB tx open
-  // across a network call); if it throws, the return stays APPROVED to retry.
+  // across a network call); if it throws, the return stays RECEIVED to retry.
   const { refundId } = await refundOrderPayment(r.orderId, refundAmountMinor, { returnId: id });
 
   return prisma.$transaction(async (tx) => {
+    await restockItems(tx, items);
     await tx.order.update({ where: { id: r.orderId }, data: { status: "RETURNED" } });
     return tx.returnRequest.update({
       where: { id },
-      data: { status: "REFUNDED", refundAmountMinor, refundId },
+      data: {
+        status: "REFUNDED",
+        refundAmountMinor,
+        refundId,
+        inspectedAt: new Date(),
+        inspectionPassed: true,
+        inspectionNote: note,
+      },
       include,
     });
   });

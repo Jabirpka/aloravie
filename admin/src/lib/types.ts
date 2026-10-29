@@ -267,9 +267,18 @@ export interface ReturnItemSnapshot {
   quantity: number;
 }
 
+export type ReturnStatus = "REQUESTED" | "APPROVED" | "PICKUP_BOOKED" | "IN_TRANSIT" | "RECEIVED" | "REJECTED" | "REFUNDED";
+
+export interface ReturnTrackingEvent {
+  id: string;
+  status: string;
+  location: string | null;
+  occurredAt: string;
+}
+
 export interface ReturnRecord {
   id: string;
-  status: "REQUESTED" | "APPROVED" | "REJECTED" | "REFUNDED";
+  status: ReturnStatus;
   reason: "WRONG_SIZE" | "DAMAGED" | "NOT_AS_DESCRIBED" | "CHANGED_MIND" | "OTHER";
   comment: string | null;
   staffNote: string | null;
@@ -277,6 +286,17 @@ export interface ReturnRecord {
   items: ReturnItemSnapshot[];
   refundAmountMinor: number | null;
   refundId: string | null;
+  pickupProvider: string | null;
+  pickupCourier: string | null;
+  pickupAwb: string | null;
+  pickupTrackingUrl: string | null;
+  pickupStatus: string | null;
+  pickupBookedAt: string | null;
+  receivedAt: string | null;
+  inspectedAt: string | null;
+  inspectionPassed: boolean | null;
+  inspectionNote: string | null;
+  returnEvents: ReturnTrackingEvent[];
   createdAt: string;
   order: { orderNumber: string; currency: string; placedAt: string } | null;
   customer: { id: string; name: string | null; email: string | null } | null;

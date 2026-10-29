@@ -581,6 +581,9 @@ model SupportMessage {
 enum ReturnStatus {
   REQUESTED
   APPROVED
+  PICKUP_BOOKED
+  IN_TRANSIT
+  RECEIVED
   REJECTED
   REFUNDED
 }
@@ -607,13 +610,44 @@ model ReturnRequest {
   staffNote         String?
   refundAmountMinor Int?
   refundId          String? // Razorpay refund id, or an offline marker
+
+  // Reverse pickup (the courier collecting the item back from the customer).
+  pickupProvider    CourierProvider?
+  pickupCourier     String?
+  pickupAwb         String?
+  pickupTrackingUrl String?
+  pickupStatus      ShipmentStatus? // reuses the forward shipment stages for the return leg
+  pickupBookedAt    DateTime?
+  receivedAt        DateTime? // item physically back at the warehouse
+
+  // Physical inspection once received.
+  inspectedAt       DateTime?
+  inspectionPassed  Boolean?
+  inspectionNote    String?
+
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
+
+  returnEvents ReturnTrackingEvent[]
 
   @@index([status])
   @@index([orderId])
   @@index([customerId])
   @@map("return_requests")
+}
+
+// Timeline for a return's reverse pickup (mirrors TrackingEvent for forward shipments).
+model ReturnTrackingEvent {
+  id         String        @id @default(cuid())
+  returnId   String
+  return     ReturnRequest @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  status     String // human-facing label, e.g. "Picked up from customer"
+  location   String?
+  occurredAt DateTime
+  createdAt  DateTime      @default(now())
+
+  @@index([returnId])
+  @@map("return_tracking_events")
 }
 
 // ---------------------------------------------------------------------------

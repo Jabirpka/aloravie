@@ -73,6 +73,44 @@ export function nextMockUpdate(current: ShipmentStatus): TrackingUpdate | null {
   return { status: next.status, label: next.label, location: next.location, occurredAt: new Date() };
 }
 
+// --- Return pickups (reverse logistics: courier collects from the customer) ---
+
+const RETURN_MOCK_FLOW: { status: ShipmentStatus; label: string; location?: string }[] = [
+  { status: "PICKED_UP", label: "Picked up from customer" },
+  { status: "IN_TRANSIT", label: "In transit to warehouse", location: "Sorting Centre" },
+  { status: "DELIVERED", label: "Received at warehouse", location: "Bengaluru Hub" },
+];
+
+/** Next step of the mock return timeline, or null once it's been received. */
+export function nextReturnMockUpdate(current: ShipmentStatus | null): TrackingUpdate | null {
+  const startIdx =
+    !current || current === "CREATED" || current === "LABEL_READY"
+      ? 0
+      : RETURN_MOCK_FLOW.findIndex((s) => s.status === current) + 1;
+  const next = RETURN_MOCK_FLOW[startIdx];
+  if (!next) return null;
+  return { status: next.status, label: next.label, location: next.location, occurredAt: new Date() };
+}
+
+/** Book a reverse pickup. Mock issues an AWB; live Shiprocket returns aren't wired here. */
+export async function bookReturnPickup(input: BookingInput): Promise<BookingResult> {
+  if (courierMode() === "shiprocket") {
+    throw new AppError(
+      501,
+      "NOT_IMPLEMENTED",
+      "Live Shiprocket return pickups aren't implemented in this build. Arrange the pickup in the Shiprocket panel, then mark the return received here. Mock mode runs the full flow.",
+    );
+  }
+  const awb = mockAwb();
+  return {
+    provider: "MOCK",
+    courierName: "Aloravie Reverse (mock)",
+    awb,
+    trackingUrl: `https://track.aloravie.example/${awb}`,
+    providerShipmentId: `mock_return_${input.orderNumber}`,
+  };
+}
+
 // --- Shiprocket (real API; needs a configured account + pickup location) ---
 // Implemented against Shiprocket's documented REST API. Untested against a live
 // account here — enable with COURIER_MODE=shiprocket and the SHIPROCKET_* env vars.

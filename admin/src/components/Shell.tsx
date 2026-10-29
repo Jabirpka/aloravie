@@ -34,6 +34,10 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
   const pathname = usePathname();
   const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark" | null>(null);
+  const [navOpen, setNavOpen] = useState(false);
+
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => setNavOpen(false), [pathname]);
 
   useEffect(() => {
     try {
@@ -69,11 +73,17 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
 
   return (
     <div className="admin-shell">
-      <aside className="sidebar">
+      {navOpen && <div className="nav-backdrop" onClick={() => setNavOpen(false)} />}
+      <aside className={`sidebar ${navOpen ? "open" : ""}`}>
         <span className="wordmark sidebar-brand">alorav<span className="sun">{"ı"}</span>e</span>
         <nav className="nav">
           {NAV.filter((item) => canAccess(user, item.feature)).map((item) => (
-            <Link key={item.href} href={item.href} className={isActive(pathname, item.href) ? "active" : ""}>
+            <Link
+              key={item.href}
+              href={item.href}
+              className={isActive(pathname, item.href) ? "active" : ""}
+              onClick={() => setNavOpen(false)}
+            >
               {item.label}
             </Link>
           ))}
@@ -83,10 +93,13 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
 
       <div className="main">
         <header className="topbar">
-          <h1 className="topbar-title">{title}</h1>
+          <div className="topbar-left">
+            <button className="nav-burger" aria-label="Open menu" aria-expanded={navOpen} onClick={() => setNavOpen(true)}>☰</button>
+            <h1 className="topbar-title">{title}</h1>
+          </div>
           <div className="topbar-user">
             <button className="link-btn" onClick={toggleTheme}>{theme === "dark" ? "Daylight" : "Evening"}</button>
-            <span>{user.name}</span>
+            <span className="user-name">{user.name}</span>
             <button className="btn sm" onClick={() => logout()}>Sign out</button>
           </div>
         </header>

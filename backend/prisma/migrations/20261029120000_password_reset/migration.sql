@@ -2,7 +2,7 @@
 ALTER TYPE "NotificationEvent" ADD VALUE 'PASSWORD_RESET';
 
 -- AlterTable
-ALTER TABLE "Customer" ADD COLUMN "mustChangePassword" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "customers" ADD COLUMN "mustChangePassword" BOOLEAN NOT NULL DEFAULT false;
 
 -- CreateTable
 CREATE TABLE "password_reset_tokens" (
@@ -23,4 +23,4 @@ CREATE UNIQUE INDEX "password_reset_tokens_tokenHash_key" ON "password_reset_tok
 CREATE INDEX "password_reset_tokens_customerId_idx" ON "password_reset_tokens"("customerId");
 
 -- AddForeignKey
-ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;

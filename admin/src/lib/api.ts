@@ -240,6 +240,24 @@ export async function resetCustomerPassword(id: string): Promise<{ tempPassword:
   };
 }
 
+export interface AddressPatch {
+  name?: string;
+  phone?: string;
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+}
+
+// Customer-care edit of a customer's saved address (fix a typo on a call).
+export async function updateCustomerAddress(customerId: string, addressId: string, input: AddressPatch): Promise<void> {
+  await apiFetch(`/api/admin/customers/${customerId}/addresses/${addressId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
 // --- Fulfilment ---
 
 export async function createShipment(orderId: string): Promise<Shipment> {

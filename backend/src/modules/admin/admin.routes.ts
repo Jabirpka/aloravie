@@ -203,3 +203,24 @@ adminRouter.post(
     res.json(await customerAccounts.adminResetCustomerPassword(id));
   }),
 );
+
+// Customer care fixes a saved address for a customer (e.g. a typo on a call).
+const addressPatchSchema = z.object({
+  name: z.string().min(1).optional(),
+  phone: z.string().min(6).optional(),
+  line1: z.string().min(1).optional(),
+  line2: z.string().optional(),
+  city: z.string().min(1).optional(),
+  state: z.string().min(1).optional(),
+  pincode: z.string().regex(/^\d{6}$/, "Enter a valid 6-digit PIN code").optional(),
+});
+
+adminRouter.patch(
+  "/customers/:id/addresses/:addressId",
+  requireAccess("customers"),
+  asyncHandler(async (req, res) => {
+    const { id, addressId } = z.object({ id: z.string().min(1), addressId: z.string().min(1) }).parse(req.params);
+    const address = await customerAccounts.updateAddress(id, addressId, addressPatchSchema.parse(req.body));
+    res.json({ address });
+  }),
+);

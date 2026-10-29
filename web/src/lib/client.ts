@@ -316,6 +316,18 @@ export async function createAddress(input: AddressInput & { isDefault?: boolean 
   return body.address;
 }
 
+export async function updateAddress(
+  id: string,
+  input: Partial<AddressInput> & { isDefault?: boolean },
+): Promise<Address> {
+  const body = (await rawFetch(
+    `/api/customers/me/addresses/${id}`,
+    { method: "PATCH", body: JSON.stringify(input) },
+    true,
+  )) as { address: Address };
+  return body.address;
+}
+
 export async function deleteAddress(id: string): Promise<void> {
   await rawFetch(`/api/customers/me/addresses/${id}`, { method: "DELETE" }, true);
 }

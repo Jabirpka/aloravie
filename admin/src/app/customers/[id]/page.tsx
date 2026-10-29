@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { useAuth } from "@/components/AdminAuthProvider";
-import { ApiRequestError, getCustomer, resetCustomerPassword } from "@/lib/api";
+import { ApiRequestError, getCustomer, resetCustomerPassword, updateCustomerAddress, type AddressPatch } from "@/lib/api";
 import { formatMoney } from "@/lib/money";
 import type { CustomerDetail } from "@/lib/types";
 
@@ -34,6 +34,37 @@ export default function CustomerDetailPage() {
     } finally {
       setResetBusy(false);
     }
+  }
+
+  const [editAddrId, setEditAddrId] = useState<string | null>(null);
+  const [addrForm, setAddrForm] = useState<AddressPatch>({});
+  const [addrBusy, setAddrBusy] = useState(false);
+  const [addrError, setAddrError] = useState<string | null>(null);
+
+  function startEditAddr(a: CustomerDetail["addresses"][number]) {
+    setEditAddrId(a.id);
+    setAddrForm({ name: a.name, phone: a.phone, line1: a.line1, line2: a.line2 ?? "", city: a.city, state: a.state, pincode: a.pincode });
+    setAddrError(null);
+  }
+
+  async function saveAddr(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editAddrId) return;
+    setAddrBusy(true);
+    setAddrError(null);
+    try {
+      await updateCustomerAddress(params.id, editAddrId, addrForm);
+      setEditAddrId(null);
+      setCustomer(await getCustomer(params.id));
+    } catch (err) {
+      setAddrError(err instanceof ApiRequestError ? err.message : "Couldn't update the address.");
+    } finally {
+      setAddrBusy(false);
+    }
+  }
+
+  function af(k: keyof AddressPatch, v: string) {
+    setAddrForm((s) => ({ ...s, [k]: v }));
   }
 
   useEffect(() => {
@@ -127,17 +158,35 @@ export default function CustomerDetailPage() {
               <div className="card">
                 <div className="card-head"><h2>Addresses</h2></div>
                 <div className="card-body">
+                  {addrError && <p className="form-error">{addrError}</p>}
                   {customer.addresses.length === 0 ? (
                     <p className="muted">No saved addresses.</p>
                   ) : (
-                    customer.addresses.map((a) => (
-                      <address key={a.id} style={{ fontStyle: "normal", fontSize: 14, lineHeight: 1.7, marginBottom: 12 }}>
-                        <div className="strong">{a.name}</div>
-                        <div>{a.line1}{a.line2 ? `, ${a.line2}` : ""}</div>
-                        <div>{a.city}, {a.state} {a.pincode}</div>
-                        <div className="muted">{a.phone}</div>
-                      </address>
-                    ))
+                    customer.addresses.map((a) =>
+                      editAddrId === a.id ? (
+                        <form key={a.id} onSubmit={saveAddr} style={{ marginBottom: 14, display: "grid", gap: 8 }}>
+                          <input value={addrForm.name ?? ""} onChange={(e) => af("name", e.target.value)} placeholder="Full name" required />
+                          <input value={addrForm.phone ?? ""} onChange={(e) => af("phone", e.target.value)} placeholder="Phone" required />
+                          <input value={addrForm.line1 ?? ""} onChange={(e) => af("line1", e.target.value)} placeholder="Address line 1" required />
+                          <input value={addrForm.line2 ?? ""} onChange={(e) => af("line2", e.target.value)} placeholder="Address line 2 (optional)" />
+                          <input value={addrForm.city ?? ""} onChange={(e) => af("city", e.target.value)} placeholder="City" required />
+                          <input value={addrForm.state ?? ""} onChange={(e) => af("state", e.target.value)} placeholder="State" required />
+                          <input value={addrForm.pincode ?? ""} onChange={(e) => af("pincode", e.target.value)} placeholder="PIN code" inputMode="numeric" pattern="\d{6}" title="6-digit PIN code" required />
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button className="btn sm primary" type="submit" disabled={addrBusy}>{addrBusy ? "Saving…" : "Save"}</button>
+                            <button className="btn sm" type="button" onClick={() => setEditAddrId(null)}>Cancel</button>
+                          </div>
+                        </form>
+                      ) : (
+                        <address key={a.id} style={{ fontStyle: "normal", fontSize: 14, lineHeight: 1.7, marginBottom: 12 }}>
+                          <div className="strong">{a.name}</div>
+                          <div>{a.line1}{a.line2 ? `, ${a.line2}` : ""}</div>
+                          <div>{a.city}, {a.state} {a.pincode}</div>
+                          <div className="muted">{a.phone}</div>
+                          <button className="link-btn" type="button" onClick={() => startEditAddr(a)} style={{ marginTop: 4 }}>Edit</button>
+                        </address>
+                      ),
+                    )
                   )}
                 </div>
               </div>

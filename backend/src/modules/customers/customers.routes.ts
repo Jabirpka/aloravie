@@ -135,6 +135,21 @@ customerRouter.post(
 );
 
 const idParam = z.object({ id: z.string().min(1) });
+const addressUpdateSchema = addressSchema.partial();
+
+customerRouter.patch(
+  "/me/addresses/:id",
+  authenticateCustomer,
+  asyncHandler(async (req, res) => {
+    if (!req.customer) throw unauthorized();
+    const address = await customers.updateAddress(
+      req.customer.sub,
+      idParam.parse(req.params).id,
+      addressUpdateSchema.parse(req.body),
+    );
+    res.json({ address });
+  }),
+);
 
 customerRouter.delete(
   "/me/addresses/:id",

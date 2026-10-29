@@ -146,6 +146,32 @@ export async function createAddress(customerId: string, input: AddressInput) {
   });
 }
 
+export async function updateAddress(customerId: string, id: string, input: Partial<AddressInput>) {
+  const existing = await prisma.address.findFirst({ where: { id, customerId } });
+  if (!existing) throw notFound("Address not found");
+  return prisma.$transaction(async (tx) => {
+    // Promoting this address to default clears the flag on the others first.
+    if (input.isDefault) {
+      await tx.address.updateMany({ where: { customerId }, data: { isDefault: false } });
+    }
+    return tx.address.update({
+      where: { id },
+      data: {
+        ...(input.type !== undefined ? { type: input.type } : {}),
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.phone !== undefined ? { phone: input.phone } : {}),
+        ...(input.line1 !== undefined ? { line1: input.line1 } : {}),
+        ...(input.line2 !== undefined ? { line2: input.line2 } : {}),
+        ...(input.city !== undefined ? { city: input.city } : {}),
+        ...(input.state !== undefined ? { state: input.state } : {}),
+        ...(input.pincode !== undefined ? { pincode: input.pincode } : {}),
+        ...(input.country !== undefined ? { country: input.country } : {}),
+        ...(input.isDefault !== undefined ? { isDefault: input.isDefault } : {}),
+      },
+    });
+  });
+}
+
 export async function deleteAddress(customerId: string, id: string) {
   const existing = await prisma.address.findFirst({ where: { id, customerId } });
   if (!existing) throw notFound("Address not found");

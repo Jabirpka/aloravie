@@ -26,6 +26,34 @@ export interface CheckoutInput {
   couponCode?: string;
 }
 
+// Save a checkout address to the customer's address book, unless an identical one
+// is already there. The first address a customer saves becomes their default.
+async function saveAddressToBook(customerId: string, a: AddressSnapshot) {
+  const existing = await prisma.address.findMany({ where: { customerId } });
+  const duplicate = existing.some(
+    (e) =>
+      e.line1.trim().toLowerCase() === a.line1.trim().toLowerCase() &&
+      e.pincode.trim() === a.pincode.trim() &&
+      e.name.trim().toLowerCase() === a.name.trim().toLowerCase(),
+  );
+  if (duplicate) return;
+  await prisma.address.create({
+    data: {
+      customerId,
+      type: "SHIPPING",
+      name: a.name,
+      phone: a.phone,
+      line1: a.line1,
+      line2: a.line2,
+      city: a.city,
+      state: a.state,
+      pincode: a.pincode,
+      country: a.country ?? "IN",
+      isDefault: existing.length === 0,
+    },
+  });
+}
+
 export async function createCheckout(customerId: string, input: CheckoutInput) {
   if (!input.items.length) throw badRequest("Your bag is empty");
 
@@ -158,6 +186,15 @@ export async function createCheckout(customerId: string, input: CheckoutInput) {
 
     return { order, payment };
   });
+
+  // If the shopper typed a fresh address (rather than picking a saved one), keep
+  // it in their address book so they don't retype it next time. Best-effort: a
+  // failure here must never fail a paid order, and we skip exact duplicates.
+  if (input.shippingAddress) {
+    void saveAddressToBook(customerId, input.shippingAddress).catch(() => {
+      /* non-critical */
+    });
+  }
 
   // Create the Razorpay order outside the DB transaction (it's a network call).
   let providerOrderId: string | null = null;

@@ -20,6 +20,7 @@ export default function ReturnDetailPage() {
   const [r, setR] = useState<ReturnRecord | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -40,7 +41,8 @@ export default function ReturnDetailPage() {
     setBusy(true);
     setError(null);
     try {
-      setR(await decideReturn(params.id, action));
+      const message = action === "refund" ? undefined : note.trim() || undefined;
+      setR(await decideReturn(params.id, action, message));
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : "Action failed.");
     } finally {
@@ -67,18 +69,34 @@ export default function ReturnDetailPage() {
               </p>
             </div>
             <div className="status-actions">
-              {r.status === "REQUESTED" && (
-                <>
-                  <button className="btn sm primary" disabled={busy} onClick={() => decide("approve")}>Approve &amp; restock</button>
-                  <button className="btn sm danger" disabled={busy} onClick={() => decide("reject")}>Reject</button>
-                </>
-              )}
               {r.status === "APPROVED" && (
                 <button className="btn sm primary" disabled={busy} onClick={() => decide("refund")}>Refund {formatMoney(total, currency)}</button>
               )}
             </div>
           </div>
           {error && <p className="form-error" style={{ marginBottom: 10 }}>{error}</p>}
+
+          {r.status === "REQUESTED" && (
+            <div className="card" style={{ marginBottom: 16 }}>
+              <div className="card-head"><h2>Review this return</h2></div>
+              <div className="card-body">
+                <label className="full" style={{ display: "block" }}>
+                  <span className="muted" style={{ fontSize: 13 }}>Message to the customer (optional) — they&rsquo;ll see this on their returns page</span>
+                  <textarea
+                    rows={3}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="e.g. Approved — please post the item back to our returns address.  /  Sorry, we can't accept this because…"
+                    style={{ width: "100%", marginTop: 6, padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 4, background: "var(--bg)", color: "var(--text)", font: "inherit" }}
+                  />
+                </label>
+                <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                  <button className="btn primary" disabled={busy} onClick={() => decide("approve")}>Approve &amp; restock</button>
+                  <button className="btn danger" disabled={busy} onClick={() => decide("reject")}>Reject</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="two-col">
             <div className="card">
@@ -112,6 +130,7 @@ export default function ReturnDetailPage() {
                     )}
                   </dl>
                   {r.comment && <p style={{ marginTop: 10 }}><span className="muted">Customer note:</span> {r.comment}</p>}
+                  {r.staffNote && <p style={{ marginTop: 10 }}><span className="muted">Message to customer:</span> {r.staffNote}</p>}
                 </div>
               </div>
 

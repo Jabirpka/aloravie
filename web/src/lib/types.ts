@@ -111,6 +111,7 @@ export interface ReturnRequest {
   status: ReturnStatus;
   reason: ReturnReason;
   comment: string | null;
+  staffNote: string | null;
   photoUrls: string[];
   items: { orderItemId: string; titleSnapshot: string; skuSnapshot: string; quantity: number; unitPriceMinor: number }[];
   refundAmountMinor: number | null;

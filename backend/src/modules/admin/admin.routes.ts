@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
-import { asyncHandler } from "../../lib/http.js";
+import { asyncHandler, badRequest } from "../../lib/http.js";
 import { authenticate } from "../../middleware/auth.js";
 import { requireAccess } from "../../middleware/access.js";
+import { uploadImages, fileUrl } from "../../lib/uploads.js";
 import * as admin from "./admin.service.js";
+import * as products from "../products/products.service.js";
 
 export const adminRouter: Router = Router();
 
@@ -118,6 +120,56 @@ adminRouter.patch(
       })
       .parse(req.body);
     res.json({ product: await admin.updateProduct(id, data) });
+  }),
+);
+
+// An image URL is either a full http(s) URL (object storage) or a local /uploads path.
+const imageUrl = z
+  .string()
+  .min(1)
+  .refine((v) => /^https?:\/\//.test(v) || v.startsWith("/uploads/"), "Image URL must be a full URL or an /uploads path");
+
+const createProductSchema = z.object({
+  title: z.string().min(1),
+  slug: z.string().min(1).regex(/^[a-z0-9-]+$/, "Slug must be lowercase letters, numbers and hyphens"),
+  description: z.string().optional(),
+  status: productStatus.optional(),
+  categoryId: z.string().optional(),
+  images: z
+    .array(z.object({ url: imageUrl, alt: z.string().optional(), position: z.number().int().optional() }))
+    .optional(),
+  variants: z
+    .array(
+      z.object({
+        sku: z.string().min(1),
+        name: z.string().min(1),
+        priceMinor: z.number().int().nonnegative(),
+        currency: z.string().length(3).optional(),
+        barcode: z.string().optional(),
+        stock: z.number().int().nonnegative().optional(),
+      }),
+    )
+    .min(1, "Add at least one option (size/variant)"),
+});
+
+adminRouter.post(
+  "/products",
+  requireAccess("catalog"),
+  asyncHandler(async (req, res) => {
+    const input = createProductSchema.parse(req.body);
+    res.status(201).json({ product: await products.createProduct(input) });
+  }),
+);
+
+// Staff image upload (product photos). Returns stored URLs to attach on create.
+adminRouter.post(
+  "/uploads",
+  requireAccess("catalog"),
+  uploadImages.array("images", 8),
+  asyncHandler(async (req, res) => {
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    if (!files.length) throw badRequest("No images uploaded");
+    res.json({ urls: files.map((f) => fileUrl(f.filename)) });
   }),
 );
 

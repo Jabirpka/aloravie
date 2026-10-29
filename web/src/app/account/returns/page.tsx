@@ -65,6 +65,11 @@ export default function ReturnsPage() {
               {r.status === "REFUNDED" && r.refundAmountMinor != null && (
                 <div className="strong">Refunded {formatMoney(r.refundAmountMinor, r.order?.currency ?? "INR")}</div>
               )}
+              {r.staffNote && (
+                <div className="return-note" style={{ marginTop: 6 }}>
+                  <span className="muted" style={{ fontSize: 12 }}>Note from the team:</span> {r.staffNote}
+                </div>
+              )}
               {r.photoUrls.length > 0 && <div className="muted" style={{ fontSize: 12 }}>{r.photoUrls.length} photo(s) attached</div>}
             </div>
           ))}

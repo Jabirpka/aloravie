@@ -94,8 +94,11 @@ async function tryRefresh(): Promise<boolean> {
 }
 
 async function apiFetch(path: string, init: RequestInit = {}, withAuth = true): Promise<unknown> {
+  // FormData (file uploads) must keep the browser's multipart boundary — only
+  // set a JSON content-type for plain-string bodies.
+  const isJson = init.body != null && !(init.body instanceof FormData);
   const headers = new Headers(init.headers);
-  if (init.body) headers.set("Content-Type", "application/json");
+  if (isJson) headers.set("Content-Type", "application/json");
   if (withAuth) {
     const token = getAccessToken();
     if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -103,7 +106,7 @@ async function apiFetch(path: string, init: RequestInit = {}, withAuth = true): 
   const res = await fetch(`${API_URL}${path}`, { ...init, headers });
   if (res.status === 401 && withAuth && (await tryRefresh())) {
     const retry = new Headers(init.headers);
-    if (init.body) retry.set("Content-Type", "application/json");
+    if (isJson) retry.set("Content-Type", "application/json");
     retry.set("Authorization", `Bearer ${getAccessToken()}`);
     return parse(await fetch(`${API_URL}${path}`, { ...init, headers: retry }));
   }
@@ -195,6 +198,29 @@ export async function listProducts(): Promise<AdminProduct[]> {
 
 export async function updateProductStatus(id: string, status: ProductStatus): Promise<void> {
   await apiFetch(`/api/admin/products/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
+}
+
+export interface CreateProductInput {
+  title: string;
+  slug: string;
+  description?: string;
+  status?: ProductStatus;
+  categoryId?: string;
+  images?: { url: string; alt?: string }[];
+  variants: { sku: string; name: string; priceMinor: number; stock?: number }[];
+}
+
+export async function createProduct(input: CreateProductInput): Promise<AdminProduct> {
+  return ((await apiFetch("/api/admin/products", { method: "POST", body: JSON.stringify(input) })) as {
+    product: AdminProduct;
+  }).product;
+}
+
+// Upload product photos; returns the stored URLs to attach on create.
+export async function uploadProductImages(files: File[]): Promise<string[]> {
+  const form = new FormData();
+  for (const f of files) form.append("images", f);
+  return ((await apiFetch("/api/admin/uploads", { method: "POST", body: form })) as { urls: string[] }).urls;
 }
 
 export async function listCustomers(q?: string): Promise<CustomerRow[]> {

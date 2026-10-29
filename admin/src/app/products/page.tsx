@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { useAuth } from "@/components/AdminAuthProvider";
@@ -59,13 +60,16 @@ export default function ProductsPage() {
   return (
     <Shell title="Products">
       {error && <p className="form-error" style={{ marginBottom: 12 }}>{error}</p>}
+      <div style={{ marginBottom: 18 }}>
+        <Link href="/products/new" className="btn primary">+ Add product</Link>
+      </div>
       <div className="card">
         <div className="table-wrap">
           {state === "loading" && <div className="empty">Loading…</div>}
           {state === "error" && <div className="empty">Couldn&rsquo;t load products.</div>}
           {state === "ready" &&
             (products.length === 0 ? (
-              <div className="empty">No products yet. Seed the database or add one via the API.</div>
+              <div className="empty">No products yet. Use “+ Add product” to create your first one.</div>
             ) : (
               <table className="table">
                 <thead>

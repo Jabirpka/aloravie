@@ -11,6 +11,7 @@ import { handleRazorpayWebhook } from "./modules/payments/payments.service.js";
 import { healthRouter } from "./modules/health/health.routes.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { productRouter } from "./modules/products/products.routes.js";
+import { feedRouter } from "./modules/feed/feed.routes.js";
 import { customerRouter } from "./modules/customers/customers.routes.js";
 import { checkoutRouter } from "./modules/checkout/checkout.routes.js";
 import { paymentRouter } from "./modules/payments/payments.routes.js";
@@ -64,6 +65,7 @@ export function createApp(): Express {
   app.use("/", healthRouter);
   app.use("/api/auth", authLimiter, authRouter);
   app.use("/api/products", productRouter);
+  app.use("/api/feed", feedRouter);
   app.use("/api/customers", customerRouter);
   app.use("/api/checkout", checkoutRouter);
   app.use("/api/payments", paymentRouter);

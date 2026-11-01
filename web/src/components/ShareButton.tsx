@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 
-// Share a product. On mobile this opens the native share sheet (WhatsApp,
-// Instagram, Messages, …). On desktop it falls back to a small menu.
+// Share a product. On HTTPS (secure context) this opens the native share sheet
+// — WhatsApp, Instagram, Messages, etc. Over plain http the browser blocks that
+// (and the clipboard API), so we fall back to a menu of direct share links plus
+// a legacy copy that still works without a secure context.
 export function ShareButton({ title, price }: { title: string; price?: string }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -12,30 +14,60 @@ export function ShareButton({ title, price }: { title: string; price?: string })
 
   async function onShare() {
     const url = window.location.href;
-    const text = `${label} — Aloravie`;
-    if (typeof navigator !== "undefined" && navigator.share) {
+    const canNative = typeof navigator !== "undefined" && !!navigator.share && window.isSecureContext;
+    if (canNative) {
       try {
-        await navigator.share({ title, text, url });
+        await navigator.share({ title, text: `${label} — Aloravie`, url });
       } catch {
-        /* user cancelled — nothing to do */
+        /* user cancelled */
       }
       return;
     }
     setOpen((o) => !o);
   }
 
-  function copy() {
-    try {
-      navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      /* ignore */
-    }
+  function markCopied() {
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
     setOpen(false);
   }
 
-  const waText = typeof window !== "undefined" ? `${label} — ${window.location.href}` : label;
+  function legacyCopy(text: string) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      markCopied();
+    } catch {
+      setOpen(false);
+    }
+  }
+
+  function copy() {
+    const url = window.location.href;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(url).then(markCopied, () => legacyCopy(url));
+    } else {
+      legacyCopy(url);
+    }
+  }
+
+  const url = typeof window !== "undefined" ? window.location.href : "";
+  const t = encodeURIComponent(`${label} — Aloravie`);
+  const u = encodeURIComponent(url);
+  const links = [
+    { name: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(`${label} — ${url}`)}` },
+    { name: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
+    { name: "Telegram", href: `https://t.me/share/url?url=${u}&text=${t}` },
+    { name: "X (Twitter)", href: `https://twitter.com/intent/tweet?text=${t}&url=${u}` },
+    { name: "Email", href: `mailto:?subject=${t}&body=${encodeURIComponent(`${label}\n${url}`)}` },
+  ];
 
   return (
     <div className="share-wrap">
@@ -44,14 +76,11 @@ export function ShareButton({ title, price }: { title: string; price?: string })
       </button>
       {open && (
         <div className="share-menu" role="menu">
-          <a
-            href={`https://wa.me/?text=${encodeURIComponent(waText)}`}
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => setOpen(false)}
-          >
-            WhatsApp
-          </a>
+          {links.map((l) => (
+            <a key={l.name} href={l.href} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>
+              {l.name}
+            </a>
+          ))}
           <button type="button" onClick={copy}>{copied ? "Copied!" : "Copy link"}</button>
         </div>
       )}

@@ -44,18 +44,35 @@ function template(event: NotificationEvent, d: TemplateData): { subject: string;
 // --- Provider calls (live mode) ---
 
 async function sendEmail(to: string, subject: string, body: string): Promise<boolean> {
-  if (!env.SENDGRID_API_KEY) return false;
-  const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${env.SENDGRID_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      personalizations: [{ to: [{ email: to }] }],
-      from: { email: env.SELLER_EMAIL, name: env.SELLER_NAME },
-      subject,
-      content: [{ type: "text/plain", value: body }],
-    }),
-  });
-  return res.ok;
+  // Prefer Resend when configured (simplest to set up); fall back to SendGrid.
+  if (env.RESEND_API_KEY) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: `${env.SELLER_NAME} <${env.SELLER_EMAIL}>`,
+        to: [to],
+        subject,
+        text: body,
+      }),
+    });
+    if (!res.ok) logger.error({ status: res.status }, "resend email failed");
+    return res.ok;
+  }
+  if (env.SENDGRID_API_KEY) {
+    const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env.SENDGRID_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email: to }] }],
+        from: { email: env.SELLER_EMAIL, name: env.SELLER_NAME },
+        subject,
+        content: [{ type: "text/plain", value: body }],
+      }),
+    });
+    return res.ok;
+  }
+  return false;
 }
 
 async function sendTwilio(from: string, to: string, body: string): Promise<boolean> {

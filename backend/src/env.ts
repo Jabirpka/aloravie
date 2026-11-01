@@ -49,6 +49,7 @@ const schema = z.object({
   // Notifications (email / SMS / WhatsApp)
   // mock = log + record notifications without sending; live = use the providers below
   NOTIFY_MODE: z.enum(["mock", "live"]).default("mock"),
+  RESEND_API_KEY: z.string().optional(),
   SENDGRID_API_KEY: z.string().optional(),
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),

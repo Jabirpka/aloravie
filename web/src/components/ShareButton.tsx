@@ -6,7 +6,7 @@ import { useState } from "react";
 // — WhatsApp, Instagram, Messages, etc. Over plain http the browser blocks that
 // (and the clipboard API), so we fall back to a menu of direct share links plus
 // a legacy copy that still works without a secure context.
-export function ShareButton({ title, price }: { title: string; price?: string }) {
+export function ShareButton({ title, price, image }: { title: string; price?: string; image?: string }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -14,15 +14,34 @@ export function ShareButton({ title, price }: { title: string; price?: string })
 
   async function onShare() {
     const url = window.location.href;
-    const canNative = typeof navigator !== "undefined" && !!navigator.share && window.isSecureContext;
-    if (canNative) {
+    const text = `${label} — Aloravie`;
+    const secure = typeof navigator !== "undefined" && window.isSecureContext;
+
+    // Best: attach the actual product photo so the image itself is shared
+    // (not just a link). Requires a secure context (HTTPS).
+    if (secure && image && typeof navigator.canShare === "function") {
       try {
-        await navigator.share({ title, text: `${label} — Aloravie`, url });
+        const res = await fetch(image);
+        const blob = await res.blob();
+        const file = new File([blob], "aloravie-product.jpg", { type: blob.type || "image/jpeg" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ title, text, url, files: [file] });
+          return;
+        }
+      } catch {
+        /* fall through to a link share */
+      }
+    }
+    // Next best: native link share (apps show the preview card).
+    if (secure && typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title, text, url });
       } catch {
         /* user cancelled */
       }
       return;
     }
+    // Fallback menu (plain http / unsupported browsers).
     setOpen((o) => !o);
   }
 

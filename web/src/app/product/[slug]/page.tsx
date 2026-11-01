@@ -96,7 +96,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div className="pdp-wishlist">
             <WishlistButton productId={product.id} slug={product.slug} />
             <span className="muted">Save to wishlist</span>
-            <ShareButton title={product.title} price={priceLabelFor(product)} />
+            <ShareButton title={product.title} price={priceLabelFor(product)} image={absoluteImage(product.images[0]?.url)} />
           </div>
 
           <ul className="pdp-details">

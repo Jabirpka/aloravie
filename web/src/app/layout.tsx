@@ -16,13 +16,25 @@ const jost = Jost({
   display: "swap",
 });
 
+// Base URL for resolving relative Open Graph image / page links. The storefront
+// origin; falls back to the API origin (same host on the IP preview).
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Aloravie — Dressed up in first light",
     template: "%s · Aloravie",
   },
   description:
     "Aloravie — women's clothing and accessories, made for slow mornings and first light. Midrange, made in India.",
+  openGraph: {
+    type: "website",
+    siteName: "Aloravie",
+    title: "Aloravie — Dressed up in first light",
+    description: "Women's clothing and accessories, made for slow mornings and first light.",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -4,13 +4,15 @@ import { useState } from "react";
 
 // Share a product. On mobile this opens the native share sheet (WhatsApp,
 // Instagram, Messages, …). On desktop it falls back to a small menu.
-export function ShareButton({ title }: { title: string }) {
+export function ShareButton({ title, price }: { title: string; price?: string }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const label = price ? `${title} · ${price}` : title;
+
   async function onShare() {
     const url = window.location.href;
-    const text = `${title} — Aloravie`;
+    const text = `${label} — Aloravie`;
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ title, text, url });
@@ -33,7 +35,7 @@ export function ShareButton({ title }: { title: string }) {
     setOpen(false);
   }
 
-  const waText = typeof window !== "undefined" ? `${title} — ${window.location.href}` : title;
+  const waText = typeof window !== "undefined" ? `${label} — ${window.location.href}` : label;
 
   return (
     <div className="share-wrap">

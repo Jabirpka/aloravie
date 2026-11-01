@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { getProduct } from "@/lib/api";
 import { AddToBag } from "@/components/AddToBag";
 import { WishlistButton } from "@/components/WishlistButton";
-import { Product3DViewer } from "@/components/Product3DViewer";
+import { ProductGallery } from "@/components/ProductGallery";
+import { ShareButton } from "@/components/ShareButton";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { toneForSlug } from "@/lib/placeholder";
 
@@ -27,8 +28,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const { product, source } = await getProduct(slug);
   if (!product) notFound();
 
-  const firstImage = product.images[0];
-
   return (
     <section className="container section">
       <nav className="breadcrumb" aria-label="Breadcrumb">
@@ -44,19 +43,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </nav>
 
       <div className="pdp">
-        <div
-          className="pdp-image"
-          style={product.model3dUrl || firstImage ? undefined : { background: toneForSlug(product.slug) }}
-        >
-          {product.model3dUrl ? (
-            <>
-              <span className="badge-3d">3D · drag to rotate</span>
-              <Product3DViewer src={product.model3dUrl} alt={product.title} />
-            </>
-          ) : (
-            firstImage && <img src={firstImage.url} alt={firstImage.alt ?? product.title} />
-          )}
-        </div>
+        <ProductGallery
+          images={product.images}
+          model3dUrl={product.model3dUrl}
+          title={product.title}
+          tone={toneForSlug(product.slug)}
+        />
 
         <div className="pdp-info">
           {product.category && <p className="eyebrow">{product.category.name}</p>}
@@ -68,6 +60,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div className="pdp-wishlist">
             <WishlistButton productId={product.id} slug={product.slug} />
             <span className="muted">Save to wishlist</span>
+            <ShareButton title={product.title} />
           </div>
 
           <ul className="pdp-details">

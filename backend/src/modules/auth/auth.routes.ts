@@ -66,3 +66,28 @@ authRouter.get(
     res.json({ user });
   }),
 );
+
+// Staff updates their own display name.
+authRouter.patch(
+  "/me",
+  authenticate,
+  asyncHandler(async (req, res) => {
+    if (!req.user) throw unauthorized();
+    const { name } = z.object({ name: z.string().min(1) }).parse(req.body);
+    res.json({ user: await authService.updateOwnName(req.user.sub, name) });
+  }),
+);
+
+// Staff changes their own password.
+authRouter.post(
+  "/change-password",
+  authenticate,
+  asyncHandler(async (req, res) => {
+    if (!req.user) throw unauthorized();
+    const { currentPassword, newPassword } = z
+      .object({ currentPassword: z.string().min(1), newPassword: z.string().min(8, "Password must be at least 8 characters") })
+      .parse(req.body);
+    await authService.changeOwnPassword(req.user.sub, currentPassword, newPassword);
+    res.json({ ok: true });
+  }),
+);

@@ -8,7 +8,7 @@ import {
   hashRefreshToken,
   refreshTokenExpiry,
 } from "../../lib/auth.js";
-import { conflict, unauthorized } from "../../lib/http.js";
+import { badRequest, conflict, notFound, unauthorized } from "../../lib/http.js";
 
 export interface AuthResult {
   user: PublicUser;
@@ -103,4 +103,19 @@ export async function logout(rawToken: string): Promise<void> {
 export async function getUserById(id: string): Promise<PublicUser | null> {
   const user = await prisma.user.findUnique({ where: { id } });
   return user ? toPublic(user) : null;
+}
+
+/** A staff member changes their own password (must know the current one). */
+export async function changeOwnPassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw notFound("Account not found");
+  const ok = await verifyPassword(currentPassword, user.passwordHash);
+  if (!ok) throw badRequest("Your current password is incorrect");
+  await prisma.user.update({ where: { id: userId }, data: { passwordHash: await hashPassword(newPassword) } });
+}
+
+/** A staff member updates their own display name. */
+export async function updateOwnName(userId: string, name: string): Promise<PublicUser> {
+  const user = await prisma.user.update({ where: { id: userId }, data: { name } });
+  return toPublic(user);
 }

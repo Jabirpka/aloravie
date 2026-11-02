@@ -44,8 +44,22 @@ model User {
   updatedAt    DateTime     @updatedAt
 
   refreshTokens RefreshToken[]
+  staffMessages StaffMessage[]
 
   @@map("users")
+}
+
+// Internal team message board — short notes staff post for each other.
+model StaffMessage {
+  id         String   @id @default(cuid())
+  authorId   String?
+  author     User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorName String // snapshot, so the note survives if the author is removed
+  body       String
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("staff_messages")
 }
 
 // Rotating refresh tokens (stored hashed, revocable).

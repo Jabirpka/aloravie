@@ -148,6 +148,33 @@ export async function logout(): Promise<void> {
   clearTokens();
 }
 
+// --- Staff self-service (profile / password) ---
+
+export async function updateOwnName(name: string): Promise<StaffUser> {
+  return ((await apiFetch("/api/auth/me", { method: "PATCH", body: JSON.stringify({ name }) })) as { user: StaffUser }).user;
+}
+
+export async function changeOwnPassword(currentPassword: string, newPassword: string): Promise<void> {
+  await apiFetch("/api/auth/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) });
+}
+
+// --- Internal team message board ---
+
+export interface StaffMessage {
+  id: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+}
+
+export async function listTeamMessages(): Promise<StaffMessage[]> {
+  return ((await apiFetch("/api/team/messages")) as { messages: StaffMessage[] }).messages;
+}
+
+export async function postTeamMessage(body: string): Promise<StaffMessage> {
+  return ((await apiFetch("/api/team/messages", { method: "POST", body: JSON.stringify({ body }) })) as { message: StaffMessage }).message;
+}
+
 // --- Admin data ---
 
 export async function getSummary(): Promise<Summary> {

@@ -87,6 +87,9 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
               {item.label}
             </Link>
           ))}
+          {/* Available to every staff member, no department gate. */}
+          <Link href="/team" className={isActive(pathname, "/team") ? "active" : ""} onClick={() => setNavOpen(false)}>Team board</Link>
+          <Link href="/profile" className={isActive(pathname, "/profile") ? "active" : ""} onClick={() => setNavOpen(false)}>My profile</Link>
         </nav>
         <div className="sidebar-foot">Back office · {user.role.toLowerCase()}</div>
       </aside>
@@ -99,7 +102,7 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
           </div>
           <div className="topbar-user">
             <button className="link-btn" onClick={toggleTheme}>{theme === "dark" ? "Daylight" : "Evening"}</button>
-            <span className="user-name">{user.name}</span>
+            <Link href="/profile" className="user-name">{user.name}</Link>
             <button className="btn sm" onClick={() => logout()}>Sign out</button>
           </div>
         </header>

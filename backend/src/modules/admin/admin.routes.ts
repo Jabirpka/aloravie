@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import { z } from "zod";
 import { asyncHandler, badRequest } from "../../lib/http.js";
 import { authenticate } from "../../middleware/auth.js";
@@ -171,6 +171,29 @@ adminRouter.post(
     const files = (req.files as Express.Multer.File[] | undefined) ?? [];
     if (!files.length) throw badRequest("No images uploaded");
     res.json({ urls: files.map((f) => fileUrl(f.filename)) });
+  }),
+);
+
+// Export the whole catalogue as a CSV download.
+adminRouter.get(
+  "/products/export.csv",
+  requireAccess("catalog"),
+  asyncHandler(async (_req, res) => {
+    const csv = await products.exportProductsCsv();
+    res.setHeader("Content-Disposition", 'attachment; filename="aloravie-products.csv"');
+    res.type("text/csv").send(csv);
+  }),
+);
+
+// Bulk import products from a CSV (same columns as the export). Existing slugs skipped.
+adminRouter.post(
+  "/products/import",
+  requireAccess("catalog"),
+  express.text({ type: "*/*", limit: "5mb" }),
+  asyncHandler(async (req, res) => {
+    const csv = typeof req.body === "string" ? req.body : "";
+    if (!csv.trim()) throw badRequest("No CSV content received");
+    res.json(await products.importProductsCsv(csv));
   }),
 );
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { useAuth } from "@/components/AdminAuthProvider";
-import { listProducts, updateProductStatus, ApiRequestError } from "@/lib/api";
+import { listProducts, updateProductStatus, exportProductsCsv, importProductsCsv, ApiRequestError } from "@/lib/api";
 import { formatMoney } from "@/lib/money";
 import type { AdminProduct, ProductStatus } from "@/lib/types";
 
@@ -29,6 +29,30 @@ export default function ProductsPage() {
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+
+  async function onImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    setImportMsg(null);
+    setError(null);
+    try {
+      const text = await file.text();
+      const r = await importProductsCsv(text);
+      setImportMsg(
+        `Imported ${r.created} product(s); skipped ${r.skipped} (already existed).` +
+          (r.errors.length ? ` Issues: ${r.errors.slice(0, 3).join("; ")}` : ""),
+      );
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiRequestError ? err.message : "Import failed.");
+    } finally {
+      setImporting(false);
+      e.target.value = "";
+    }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -60,9 +84,15 @@ export default function ProductsPage() {
   return (
     <Shell title="Products">
       {error && <p className="form-error" style={{ marginBottom: 12 }}>{error}</p>}
-      <div style={{ marginBottom: 18 }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
         <Link href="/products/new" className="btn primary">+ Add product</Link>
+        <button className="btn" onClick={() => exportProductsCsv().catch(() => setError("Export failed."))}>Export CSV</button>
+        <label className="btn" style={{ cursor: "pointer" }}>
+          {importing ? "Importing…" : "Import CSV"}
+          <input type="file" accept=".csv,text/csv" hidden onChange={onImport} disabled={importing} />
+        </label>
       </div>
+      {importMsg && <p className="muted" style={{ marginBottom: 12 }}>{importMsg}</p>}
       <div className="card">
         <div className="table-wrap">
           {state === "loading" && <div className="empty">Loading…</div>}

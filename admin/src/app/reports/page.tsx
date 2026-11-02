@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { useAuth } from "@/components/AdminAuthProvider";
-import { getReports } from "@/lib/api";
+import { getReports, exportReportCsv } from "@/lib/api";
 import { formatMoney } from "@/lib/money";
 import type { Report } from "@/lib/types";
 
@@ -38,10 +38,13 @@ export default function ReportsPage() {
 
   return (
     <Shell title="Reports">
-      <div className="filters">
-        {RANGES.map((r) => (
-          <button key={r.label} className={`chip ${range === r.days ? "active" : ""}`} onClick={() => setRange(r.days)}>{r.label}</button>
-        ))}
+      <div className="filters" style={{ justifyContent: "space-between" }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {RANGES.map((r) => (
+            <button key={r.label} className={`chip ${range === r.days ? "active" : ""}`} onClick={() => setRange(r.days)}>{r.label}</button>
+          ))}
+        </div>
+        <button className="btn sm" onClick={() => exportReportCsv(range)}>Export CSV</button>
       </div>
 
       {state === "loading" && <p className="muted">Loading…</p>}

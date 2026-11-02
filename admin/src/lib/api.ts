@@ -223,6 +223,46 @@ export async function uploadProductImages(files: File[]): Promise<string[]> {
   return ((await apiFetch("/api/admin/uploads", { method: "POST", body: form })) as { urls: string[] }).urls;
 }
 
+// Fetch a file (CSV) with auth and trigger a browser download.
+async function downloadWithAuth(path: string, filename: string): Promise<void> {
+  const headers = new Headers();
+  const token = getAccessToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  let res = await fetch(`${API_URL}${path}`, { headers });
+  if (res.status === 401 && (await tryRefresh())) {
+    const retry = new Headers();
+    retry.set("Authorization", `Bearer ${getAccessToken()}`);
+    res = await fetch(`${API_URL}${path}`, { headers: retry });
+  }
+  if (!res.ok) throw new ApiRequestError(res.status, await res.json().catch(() => ({})));
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+export const exportProductsCsv = () => downloadWithAuth("/api/admin/products/export.csv", "aloravie-products.csv");
+export const exportReportCsv = (days?: number) =>
+  downloadWithAuth(`/api/admin/reports/export.csv${days ? `?days=${days}` : ""}`, `aloravie-report${days ? `-${days}d` : ""}.csv`);
+
+// Bulk import products from CSV text. Sent as text/csv so the server parses it as a file.
+export async function importProductsCsv(csv: string): Promise<{ created: number; skipped: number; errors: string[] }> {
+  async function attempt(): Promise<Response> {
+    const headers = new Headers({ "Content-Type": "text/csv" });
+    const token = getAccessToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return fetch(`${API_URL}/api/admin/products/import`, { method: "POST", headers, body: csv });
+  }
+  let res = await attempt();
+  if (res.status === 401 && (await tryRefresh())) res = await attempt();
+  return parse(res) as Promise<{ created: number; skipped: number; errors: string[] }>;
+}
+
 export async function listCustomers(q?: string): Promise<CustomerRow[]> {
   const qs = q ? `?q=${encodeURIComponent(q)}` : "";
   return ((await apiFetch(`/api/admin/customers${qs}`)) as { customers: CustomerRow[] }).customers;

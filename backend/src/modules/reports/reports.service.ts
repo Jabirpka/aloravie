@@ -1,5 +1,6 @@
 import type { OrderStatus } from "@prisma/client";
 import { prisma } from "../../prisma.js";
+import { toCsv } from "../../lib/csv.js";
 
 const REVENUE_STATUSES: OrderStatus[] = ["CONFIRMED", "PACKED", "SHIPPED", "DELIVERED"];
 const LOW_STOCK_THRESHOLD = 5;
@@ -83,7 +84,8 @@ export async function getReports(days?: number) {
       revenueMinor: r._sum.totalMinor ?? 0,
     })),
     gst: {
-      taxableMinor: agg._sum.subtotalMinor ?? 0,
+      // Prices are GST-inclusive: taxable base = subtotal − the GST within it.
+      taxableMinor: (agg._sum.subtotalMinor ?? 0) - (agg._sum.taxMinor ?? 0),
       gstMinor: agg._sum.taxMinor ?? 0,
       shippingMinor: agg._sum.shippingMinor ?? 0,
       discountMinor: agg._sum.discountMinor ?? 0,
@@ -98,4 +100,38 @@ export async function getReports(days?: number) {
       available: i.onHand - i.reserved,
     })),
   };
+}
+
+/** The report, flattened to a multi-section CSV for download. Amounts in rupees. */
+export async function exportReportCsv(days?: number): Promise<string> {
+  const r = await getReports(days);
+  const rupees = (m: number) => (m / 100).toFixed(2);
+  const rows: (string | number)[][] = [];
+  rows.push(["Aloravie report", days ? `last ${days} days` : "all time"]);
+  rows.push([]);
+  rows.push(["KPIs", ""]);
+  rows.push(["Revenue (₹)", rupees(r.kpis.revenueMinor)]);
+  rows.push(["Orders", r.kpis.orderCount]);
+  rows.push(["Avg order value (₹)", rupees(r.kpis.aovMinor)]);
+  rows.push(["Customers", r.kpis.customersCount]);
+  rows.push([]);
+  rows.push(["GST summary", ""]);
+  rows.push(["Taxable value (₹)", rupees(r.gst.taxableMinor)]);
+  rows.push(["GST collected (₹)", rupees(r.gst.gstMinor)]);
+  rows.push(["Shipping (₹)", rupees(r.gst.shippingMinor)]);
+  rows.push(["Discounts (₹)", rupees(r.gst.discountMinor)]);
+  rows.push(["Total (₹)", rupees(r.gst.totalMinor)]);
+  rows.push([]);
+  rows.push(["Sales by channel", "Revenue (₹)", "Orders"]);
+  r.byChannel.forEach((c) => rows.push([c.name, rupees(c.revenueMinor), c.orderCount]));
+  rows.push([]);
+  rows.push(["Best sellers", "Units", "Revenue (₹)"]);
+  r.bestSellers.forEach((b) => rows.push([b.title, b.units, rupees(b.revenueMinor)]));
+  rows.push([]);
+  rows.push(["Daily revenue (14 days)", "Revenue (₹)"]);
+  r.dailyRevenue.forEach((d) => rows.push([d.date, rupees(d.revenueMinor)]));
+  rows.push([]);
+  rows.push(["Low stock", "Variant", "SKU", "Available"]);
+  r.lowStock.forEach((l) => rows.push([l.product, l.variantName, l.sku, l.available]));
+  return toCsv(rows);
 }

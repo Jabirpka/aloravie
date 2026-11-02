@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useAuth } from "./AdminAuthProvider";
 import { canAccess, type Feature } from "@/lib/access";
 
@@ -35,9 +35,24 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
   const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark" | null>(null);
   const [navOpen, setNavOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close the mobile drawer whenever the route changes.
-  useEffect(() => setNavOpen(false), [pathname]);
+  // Close the mobile drawer and the user menu whenever the route changes.
+  useEffect(() => {
+    setNavOpen(false);
+    setUserMenuOpen(false);
+  }, [pathname]);
+
+  // Close the user menu on an outside click.
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    function onDown(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [userMenuOpen]);
 
   useEffect(() => {
     try {
@@ -87,9 +102,6 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
               {item.label}
             </Link>
           ))}
-          {/* Available to every staff member, no department gate. */}
-          <Link href="/team" className={isActive(pathname, "/team") ? "active" : ""} onClick={() => setNavOpen(false)}>Team board</Link>
-          <Link href="/profile" className={isActive(pathname, "/profile") ? "active" : ""} onClick={() => setNavOpen(false)}>My profile</Link>
         </nav>
         <div className="sidebar-foot">Back office · {user.role.toLowerCase()}</div>
       </aside>
@@ -101,9 +113,32 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
             <h1 className="topbar-title">{title}</h1>
           </div>
           <div className="topbar-user">
-            <button className="link-btn" onClick={toggleTheme}>{theme === "dark" ? "Daylight" : "Evening"}</button>
-            <Link href="/profile" className="user-name">{user.name}</Link>
-            <button className="btn sm" onClick={() => logout()}>Sign out</button>
+            <div className="user-menu" ref={userMenuRef}>
+              <button
+                className="user-trigger"
+                aria-haspopup="menu"
+                aria-expanded={userMenuOpen}
+                onClick={() => setUserMenuOpen((o) => !o)}
+              >
+                <span className="user-avatar">{user.name.charAt(0).toUpperCase()}</span>
+                <span className="user-trigger-name">{user.name}</span>
+                <span aria-hidden="true">▾</span>
+              </button>
+              {userMenuOpen && (
+                <div className="user-dropdown" role="menu">
+                  <div className="user-dropdown-head">
+                    <div className="strong">{user.name}</div>
+                    <div className="muted" style={{ fontSize: 12 }}>{user.email}</div>
+                  </div>
+                  <div className="user-dropdown-sep" />
+                  <Link href="/profile" onClick={() => setUserMenuOpen(false)}>My profile</Link>
+                  <Link href="/team" onClick={() => setUserMenuOpen(false)}>Team board</Link>
+                  <button type="button" onClick={() => { toggleTheme(); }}>{theme === "dark" ? "Daylight mode" : "Evening mode"}</button>
+                  <div className="user-dropdown-sep" />
+                  <button type="button" onClick={() => logout()}>Sign out</button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
         <div className="content">{children}</div>

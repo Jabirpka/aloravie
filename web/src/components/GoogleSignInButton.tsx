@@ -81,7 +81,6 @@ export function GoogleSignInButton({ onSuccess }: { onSuccess?: () => void }) {
 
   return (
     <div className="google-signin">
-      <div className="google-divider"><span>or</span></div>
       <div ref={holder} style={{ display: "flex", justifyContent: "center" }} />
       {error && <p className="form-error" style={{ marginTop: 8 }}>{error}</p>}
     </div>

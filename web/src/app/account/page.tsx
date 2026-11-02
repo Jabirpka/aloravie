@@ -6,7 +6,7 @@ import { Suspense, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { PhoneVerify } from "@/components/PhoneVerify";
-import { ApiRequestError, changePassword } from "@/lib/client";
+import { ApiRequestError, changePassword, GOOGLE_CLIENT_ID } from "@/lib/client";
 
 function AccountInner() {
   const { customer, loading, login, register, logout } = useAuth();
@@ -83,10 +83,14 @@ function AccountInner() {
 
   return (
     <div className="auth-card">
-      <div className="auth-tabs">
-        <button className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>Sign in</button>
-        <button className={mode === "register" ? "active" : ""} onClick={() => setMode("register")}>Create account</button>
-      </div>
+      <h1 className="auth-title">{mode === "login" ? "Welcome back" : "Create your account"}</h1>
+
+      {GOOGLE_CLIENT_ID && (
+        <>
+          <GoogleSignInButton onSuccess={() => router.push(next)} />
+          <div className="google-divider"><span>or</span></div>
+        </>
+      )}
 
       <form className="auth-form" onSubmit={submit}>
         {mode === "register" && (
@@ -99,12 +103,6 @@ function AccountInner() {
           <span>Email</span>
           <input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} required autoComplete="email" />
         </label>
-        {mode === "register" && (
-          <label>
-            <span>Phone (optional)</span>
-            <input value={form.phone} onChange={(e) => update("phone", e.target.value)} autoComplete="tel" />
-          </label>
-        )}
         <label>
           <span>Password</span>
           <input type="password" value={form.password} onChange={(e) => update("password", e.target.value)} required minLength={8} autoComplete={mode === "login" ? "current-password" : "new-password"} />
@@ -117,13 +115,18 @@ function AccountInner() {
         </button>
       </form>
 
-      <GoogleSignInButton onSuccess={() => router.push(next)} />
-
       {mode === "login" && (
-        <p style={{ marginTop: 14, textAlign: "center", fontSize: 14 }}>
+        <p className="auth-forgot">
           <Link href="/forgot-password">Forgot your password?</Link>
         </p>
       )}
+
+      <p className="auth-switch">
+        {mode === "login" ? "New to Aloravie?" : "Already have an account?"}
+        <button type="button" onClick={() => setMode(mode === "login" ? "register" : "login")}>
+          {mode === "login" ? "Create account" : "Sign in"}
+        </button>
+      </p>
     </div>
   );
 }

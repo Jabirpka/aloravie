@@ -21,7 +21,6 @@ const NAV: { href: string; label: string; feature: Feature }[] = [
   { href: "/support", label: "Support", feature: "support" },
   { href: "/notifications", label: "Notifications", feature: "notifications" },
   { href: "/audit", label: "Audit log", feature: "employees" },
-  { href: "/settings", label: "Settings", feature: "employees" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -133,6 +132,9 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
                   <div className="user-dropdown-sep" />
                   <Link href="/profile" onClick={() => setUserMenuOpen(false)}>My profile</Link>
                   <Link href="/team" onClick={() => setUserMenuOpen(false)}>Team board</Link>
+                  {canAccess(user, "employees") && (
+                    <Link href="/settings" onClick={() => setUserMenuOpen(false)}>Account settings</Link>
+                  )}
                   <button type="button" onClick={() => { toggleTheme(); }}>{theme === "dark" ? "Daylight mode" : "Evening mode"}</button>
                   <div className="user-dropdown-sep" />
                   <button type="button" onClick={() => logout()}>Sign out</button>

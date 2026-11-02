@@ -37,7 +37,7 @@ export interface DocShipment {
   status: string;
 }
 
-function esc(value: unknown): string {
+export function esc(value: unknown): string {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -68,7 +68,7 @@ function sellerBlock(): string {
 }
 
 // Shared page chrome + print styles. `size` is the @page size.
-function page(title: string, body: string, size = "A4"): string {
+export function page(title: string, body: string, size = "A4"): string {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <title>${esc(title)}</title>

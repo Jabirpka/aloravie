@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { useAuth } from "@/components/AdminAuthProvider";
-import { getReports, exportReportCsv } from "@/lib/api";
+import { getReports, exportReportCsv, fetchReportDocHtml, ApiRequestError } from "@/lib/api";
 import { formatMoney } from "@/lib/money";
 import type { Report } from "@/lib/types";
 
@@ -34,6 +34,25 @@ export default function ReportsPage() {
     void load();
   }, [user, loading, load]);
 
+  const [docError, setDocError] = useState<string | null>(null);
+
+  async function openReportDoc() {
+    setDocError(null);
+    try {
+      const html = await fetchReportDocHtml(range);
+      const w = window.open("", "_blank");
+      if (!w) {
+        setDocError("Please allow pop-ups to open the report.");
+        return;
+      }
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+    } catch (err) {
+      setDocError(err instanceof ApiRequestError ? err.message : "Couldn't open the report.");
+    }
+  }
+
   const maxDaily = data ? Math.max(1, ...data.dailyRevenue.map((d) => d.revenueMinor)) : 1;
 
   return (
@@ -44,8 +63,12 @@ export default function ReportsPage() {
             <button key={r.label} className={`chip ${range === r.days ? "active" : ""}`} onClick={() => setRange(r.days)}>{r.label}</button>
           ))}
         </div>
-        <button className="btn sm" onClick={() => exportReportCsv(range)}>Export CSV</button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button className="btn sm" onClick={() => void openReportDoc()}>Report PDF</button>
+          <button className="btn sm" onClick={() => exportReportCsv(range)}>Export CSV</button>
+        </div>
       </div>
+      {docError && <p className="form-error" style={{ marginTop: 8 }}>{docError}</p>}
 
       {state === "loading" && <p className="muted">Loading…</p>}
       {state === "error" && <p className="muted">Couldn&rsquo;t load reports.</p>}

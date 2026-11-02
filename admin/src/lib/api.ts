@@ -277,6 +277,22 @@ export const exportProductsCsv = () => downloadWithAuth("/api/admin/products/exp
 export const exportReportCsv = (days?: number) =>
   downloadWithAuth(`/api/admin/reports/export.csv${days ? `?days=${days}` : ""}`, `aloravie-report${days ? `-${days}d` : ""}.csv`);
 
+// Printable report document (HTML) fetched with auth, then opened in a new tab.
+export async function fetchReportDocHtml(days?: number): Promise<string> {
+  const path = `/api/admin/reports/document${days ? `?days=${days}` : ""}`;
+  const headers = new Headers();
+  const token = getAccessToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  let res = await fetch(`${API_URL}${path}`, { headers });
+  if (res.status === 401 && (await tryRefresh())) {
+    const retry = new Headers();
+    retry.set("Authorization", `Bearer ${getAccessToken()}`);
+    res = await fetch(`${API_URL}${path}`, { headers: retry });
+  }
+  if (!res.ok) throw new ApiRequestError(res.status, await res.json().catch(() => ({})));
+  return res.text();
+}
+
 // Bulk import products from CSV text. Sent as text/csv so the server parses it as a file.
 export async function importProductsCsv(csv: string): Promise<{ created: number; skipped: number; errors: string[] }> {
   async function attempt(): Promise<Response> {

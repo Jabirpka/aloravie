@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import { PhoneVerify } from "@/components/PhoneVerify";
 import { useCart } from "@/components/CartProvider";
 import { formatMoney } from "@/lib/money";
 import type { Address, AddressInput } from "@/lib/types";
@@ -199,6 +200,19 @@ export default function CheckoutPage() {
         <p className="eyebrow">Checkout</p>
         <h1 className="checkout-h">Your bag is empty</h1>
         <Link href="/shop" className="btn primary">Start shopping</Link>
+      </section>
+    );
+  }
+
+  if (!customer.phoneVerified) {
+    return (
+      <section className="container section narrow">
+        <p className="eyebrow">Checkout</p>
+        <h1 className="checkout-h">Verify your phone</h1>
+        <p className="muted">For your security, please verify a mobile number before placing your order.</p>
+        <div className="verify-card" style={{ marginTop: 18 }}>
+          <PhoneVerify />
+        </div>
       </section>
     );
   }

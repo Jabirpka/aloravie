@@ -123,6 +123,22 @@
   .acct-name { display: none; } /* avatar-only on small screens */
 }
 
+/* Google sign-in + phone verification */
+.google-signin { margin-top: 16px; }
+.google-divider {
+  display: flex; align-items: center; gap: 12px;
+  color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em;
+  margin: 4px 0 14px;
+}
+.google-divider::before, .google-divider::after {
+  content: ""; flex: 1; height: 1px; background: var(--line);
+}
+.verify-card {
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  padding: 16px 18px; margin: 16px 0 20px;
+}
+
 /* ---------------- Footer ---------------- */
 .site-footer { border-top: 1px solid var(--line); margin-top: 48px; }
 .site-footer > .container { padding-block: 40px 48px; }

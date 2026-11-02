@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { PhoneVerify } from "@/components/PhoneVerify";
 import { ApiRequestError, changePassword } from "@/lib/client";
 
 function AccountInner() {
@@ -56,6 +58,13 @@ function AccountInner() {
         )}
         <p className="eyebrow">Your account</p>
         <h1 className="account-h">Hello{customer.name ? `, ${customer.name.split(" ")[0]}` : ""}.</h1>
+        {!customer.phoneVerified && (
+          <div className="verify-card">
+            <h2 className="checkout-sub" style={{ marginTop: 0 }}>Verify your phone</h2>
+            <p className="muted" style={{ marginTop: 0 }}>A verified mobile number is required before you can place an order.</p>
+            <PhoneVerify />
+          </div>
+        )}
         <dl className="account-details">
           <div><dt>Email</dt><dd>{customer.email ?? "—"}</dd></div>
           {customer.phone && <div><dt>Phone</dt><dd>{customer.phone}</dd></div>}
@@ -107,6 +116,8 @@ function AccountInner() {
           {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
         </button>
       </form>
+
+      <GoogleSignInButton onSuccess={() => router.push(next)} />
 
       {mode === "login" && (
         <p style={{ marginTop: 14, textAlign: "center", fontSize: 14 }}>

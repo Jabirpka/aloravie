@@ -13,6 +13,9 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
+// Google OAuth Web client ID (public). When unset, the Google button is hidden.
+export const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+
 const ACCESS_KEY = "aloravie-customer-access";
 const REFRESH_KEY = "aloravie-customer-refresh";
 
@@ -137,6 +140,33 @@ export async function loginCustomer(input: { email: string; password: string }):
     body: JSON.stringify(input),
   })) as AuthPayload;
   setTokens(body.accessToken, body.refreshToken);
+  return body.customer;
+}
+
+export async function loginWithGoogle(credential: string): Promise<CustomerAccount> {
+  const body = (await rawFetch("/api/customers/google", {
+    method: "POST",
+    body: JSON.stringify({ credential }),
+  })) as AuthPayload;
+  setTokens(body.accessToken, body.refreshToken);
+  return body.customer;
+}
+
+/** Request a phone-verification code. In test mode the response carries `devCode`. */
+export async function requestPhoneOtp(phone: string): Promise<{ ok: true; devCode?: string }> {
+  return (await rawFetch(
+    "/api/customers/me/phone/request-otp",
+    { method: "POST", body: JSON.stringify({ phone }) },
+    true,
+  )) as { ok: true; devCode?: string };
+}
+
+export async function verifyPhoneOtp(phone: string, code: string): Promise<CustomerAccount> {
+  const body = (await rawFetch(
+    "/api/customers/me/phone/verify-otp",
+    { method: "POST", body: JSON.stringify({ phone, code }) },
+    true,
+  )) as { customer: CustomerAccount };
   return body.customer;
 }
 

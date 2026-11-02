@@ -56,6 +56,14 @@ const schema = z.object({
   TWILIO_SMS_FROM: z.string().optional(),
   TWILIO_WHATSAPP_FROM: z.string().optional(),
 
+  // Customer sign-in: Google (Sign in with Google) + phone OTP verification
+  // GOOGLE_CLIENT_ID is the OAuth 2.0 Web client ID; used to verify ID tokens.
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  // test = OTP is returned to the client / logged (no SMS sent) for testing;
+  // live = send the code over SMS (requires an SMS provider + India DLT setup).
+  OTP_MODE: z.enum(["test", "live"]).default("test"),
+  OTP_TTL_MINUTES: z.coerce.number().int().positive().default(10),
+
   // Seller identity (printed on invoices / delivery notes / labels)
   SELLER_NAME: z.string().default("Aloravie"),
   SELLER_GSTIN: z.string().default(""),

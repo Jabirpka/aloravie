@@ -83,6 +83,11 @@ model Customer {
   phone        String?  @unique
   name         String?
   passwordHash String? // null for marketplace/guest customers who never set one
+  // Linked Google account id ("sub" claim), set when the customer signs in with Google.
+  googleSub    String?  @unique
+  // Phone verification (required before placing an order).
+  phoneVerified   Boolean   @default(false)
+  phoneVerifiedAt DateTime?
   // Set when staff issue a temporary password; the storefront nudges the customer to change it.
   mustChangePassword Boolean @default(false)
   createdAt    DateTime @default(now())
@@ -96,8 +101,25 @@ model Customer {
   returns               ReturnRequest[]
   reviews               Review[]
   wishlist              WishlistItem[]
+  phoneOtps             PhoneOtp[]
 
   @@map("customers")
+}
+
+// One-time codes for phone-number verification (stored hashed, short-lived).
+model PhoneOtp {
+  id         String    @id @default(cuid())
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  phone      String
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([customerId])
+  @@map("phone_otps")
 }
 
 // A customer's saved product (one row per customer+product).

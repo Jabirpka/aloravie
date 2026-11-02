@@ -26,6 +26,9 @@ const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(8, "Password must be at least 8 characters"),
 });
+const googleSchema = z.object({ credential: z.string().min(1) });
+const phoneRequestSchema = z.object({ phone: z.string().min(6) });
+const phoneVerifySchema = z.object({ phone: z.string().min(6), code: z.string().min(4).max(8) });
 
 const addressSchema = z.object({
   type: z.enum(["SHIPPING", "BILLING"]).optional(),
@@ -54,6 +57,15 @@ customerRouter.post(
   authLimiter,
   asyncHandler(async (req, res) => {
     res.json(await customers.login(loginSchema.parse(req.body)));
+  }),
+);
+
+// Sign in / sign up with Google (ID token from "Sign in with Google").
+customerRouter.post(
+  "/google",
+  authLimiter,
+  asyncHandler(async (req, res) => {
+    res.json(await customers.loginWithGoogle(googleSchema.parse(req.body).credential));
   }),
 );
 
@@ -112,6 +124,28 @@ customerRouter.post(
     const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
     await customers.changePassword(req.customer.sub, currentPassword, newPassword);
     res.json({ ok: true });
+  }),
+);
+
+// Phone verification: request a code, then verify it.
+customerRouter.post(
+  "/me/phone/request-otp",
+  authenticateCustomer,
+  authLimiter,
+  asyncHandler(async (req, res) => {
+    if (!req.customer) throw unauthorized();
+    res.json(await customers.requestPhoneOtp(req.customer.sub, phoneRequestSchema.parse(req.body).phone));
+  }),
+);
+
+customerRouter.post(
+  "/me/phone/verify-otp",
+  authenticateCustomer,
+  authLimiter,
+  asyncHandler(async (req, res) => {
+    if (!req.customer) throw unauthorized();
+    const { phone, code } = phoneVerifySchema.parse(req.body);
+    res.json({ customer: await customers.verifyPhoneOtp(req.customer.sub, phone, code) });
   }),
 );
 

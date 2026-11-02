@@ -97,6 +97,13 @@ async function saveAddressToBook(customerId: string, a: AddressSnapshot) {
 export async function createCheckout(customerId: string, input: CheckoutInput) {
   if (!input.items.length) throw badRequest("Your bag is empty");
 
+  // A verified phone number is required before an order can be placed.
+  const customer = await prisma.customer.findUnique({ where: { id: customerId } });
+  if (!customer) throw notFound("Account not found");
+  if (!customer.phoneVerified) {
+    throw new AppError(403, "PHONE_UNVERIFIED", "Please verify your phone number before placing an order.");
+  }
+
   const channel = await prisma.salesChannel.findUnique({ where: { type: "WEB" } });
   if (!channel) throw new AppError(500, "CONFIG", "WEB sales channel not configured — run the seed");
 

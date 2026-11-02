@@ -67,6 +67,7 @@ export interface CustomerAccount {
   email: string | null;
   name: string | null;
   phone: string | null;
+  phoneVerified: boolean;
   mustChangePassword: boolean;
 }
 

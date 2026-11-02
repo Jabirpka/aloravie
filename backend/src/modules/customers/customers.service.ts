@@ -14,6 +14,7 @@ import {
 } from "../../lib/auth.js";
 import { badRequest, conflict, unauthorized, notFound } from "../../lib/http.js";
 import { notifyPasswordReset } from "../notifications/notifications.service.js";
+import { sendOtpSms } from "../../lib/sms-otp.js";
 
 export interface PublicCustomer {
   id: string;
@@ -354,8 +355,8 @@ export async function requestPhoneOtp(customerId: string, phoneRaw: string): Pro
   });
 
   if (env.OTP_MODE === "live") {
-    // TODO: deliver `code` to `phone` via an SMS provider (India DLT required).
-    // Until that is configured, the code is created but not sent.
+    const sent = await sendOtpSms(phone, code);
+    if (!sent) throw badRequest("We couldn't send the code right now. Please try again in a moment.");
     return { ok: true };
   }
   // Test mode: return the code so it can be entered without a real SMS.

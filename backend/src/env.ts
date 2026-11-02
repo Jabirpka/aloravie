@@ -60,9 +60,17 @@ const schema = z.object({
   // GOOGLE_CLIENT_ID is the OAuth 2.0 Web client ID; used to verify ID tokens.
   GOOGLE_CLIENT_ID: z.string().optional(),
   // test = OTP is returned to the client / logged (no SMS sent) for testing;
-  // live = send the code over SMS (requires an SMS provider + India DLT setup).
+  // live = send the code over SMS via OTP_PROVIDER below.
   OTP_MODE: z.enum(["test", "live"]).default("test"),
   OTP_TTL_MINUTES: z.coerce.number().int().positive().default(10),
+  // Which SMS gateway delivers OTPs in live mode.
+  // fast2sms = easiest for India (its OTP route uses the provider's own DLT, no
+  // merchant DLT needed); msg91 = India (needs a DLT OTP template); twilio = intl.
+  OTP_PROVIDER: z.enum(["none", "fast2sms", "msg91", "twilio"]).default("none"),
+  FAST2SMS_API_KEY: z.string().optional(),
+  MSG91_AUTH_KEY: z.string().optional(),
+  MSG91_OTP_TEMPLATE_ID: z.string().optional(),
+  MSG91_SENDER: z.string().optional(),
 
   // Seller identity (printed on invoices / delivery notes / labels)
   SELLER_NAME: z.string().default("Aloravie"),
@@ -88,6 +96,19 @@ const schema = z.object({
   }
   const fail = (path: string, message: string) =>
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
+
+  // Live OTP needs a provider with its credentials.
+  if (val.OTP_MODE === "live") {
+    if (val.OTP_PROVIDER === "none") {
+      fail("OTP_PROVIDER", "OTP_PROVIDER is required when OTP_MODE=live (fast2sms, msg91 or twilio)");
+    } else if (val.OTP_PROVIDER === "fast2sms" && !val.FAST2SMS_API_KEY) {
+      fail("FAST2SMS_API_KEY", "FAST2SMS_API_KEY is required for OTP_PROVIDER=fast2sms");
+    } else if (val.OTP_PROVIDER === "msg91" && (!val.MSG91_AUTH_KEY || !val.MSG91_OTP_TEMPLATE_ID)) {
+      fail("MSG91_AUTH_KEY", "MSG91_AUTH_KEY and MSG91_OTP_TEMPLATE_ID are required for OTP_PROVIDER=msg91");
+    } else if (val.OTP_PROVIDER === "twilio" && (!val.TWILIO_ACCOUNT_SID || !val.TWILIO_AUTH_TOKEN || !val.TWILIO_SMS_FROM)) {
+      fail("TWILIO_ACCOUNT_SID", "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_SMS_FROM are required for OTP_PROVIDER=twilio");
+    }
+  }
 
   // S3 storage needs its full credential set.
   if (val.STORAGE_DRIVER === "s3") {

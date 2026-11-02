@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { GOOGLE_CLIENT_ID, ApiRequestError } from "@/lib/client";
 import { useAuth } from "./AuthProvider";
 
@@ -42,9 +42,31 @@ export function GoogleSignInButton({ onSuccess }: { onSuccess?: () => void }) {
   const onSuccessRef = useRef(onSuccess);
   onSuccessRef.current = onSuccess;
 
+  // (Re)draw the button at the container's current width so it matches the form
+  // and resizes cleanly. GIS caps the width at 400px.
+  const draw = useCallback(() => {
+    if (!holder.current || !window.google) return;
+    const width = Math.min(400, Math.max(220, Math.floor(holder.current.clientWidth || 320)));
+    holder.current.innerHTML = "";
+    window.google.accounts.id.renderButton(holder.current, {
+      type: "standard",
+      theme: "outline",
+      size: "large",
+      text: "continue_with",
+      shape: "pill",
+      locale: "en",
+      width,
+    });
+  }, []);
+
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return;
     let cancelled = false;
+    let raf = 0;
+    const onResize = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(draw);
+    };
     loadGis()
       .then(() => {
         if (cancelled || !holder.current || !window.google) return;
@@ -60,28 +82,23 @@ export function GoogleSignInButton({ onSuccess }: { onSuccess?: () => void }) {
             }
           },
         });
-        window.google.accounts.id.renderButton(holder.current, {
-          type: "standard",
-          theme: "outline",
-          size: "large",
-          text: "continue_with",
-          shape: "pill",
-          width: 280,
-          locale: "en",
-        });
+        draw();
+        window.addEventListener("resize", onResize);
       })
       .catch(() => setError("Could not load Google sign-in."));
     return () => {
       cancelled = true;
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
     };
-  }, [loginWithGoogle]);
+  }, [loginWithGoogle, draw]);
 
   // When no client ID is configured, render nothing (email/password still works).
   if (!GOOGLE_CLIENT_ID) return null;
 
   return (
     <div className="google-signin">
-      <div ref={holder} style={{ display: "flex", justifyContent: "center" }} />
+      <div ref={holder} className="google-btn-holder" />
       {error && <p className="form-error" style={{ marginTop: 8 }}>{error}</p>}
     </div>
   );

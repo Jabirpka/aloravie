@@ -124,7 +124,9 @@
 }
 
 /* Google sign-in + phone verification */
-.google-signin { margin: 0; }
+.google-signin { margin: 0; min-height: 44px; }
+.google-btn-holder { width: 100%; display: flex; justify-content: center; min-height: 40px; }
+.google-btn-holder > div { width: 100%; } /* let the GIS button span the holder */
 .google-divider {
   display: flex; align-items: center; gap: 12px;
   color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em;

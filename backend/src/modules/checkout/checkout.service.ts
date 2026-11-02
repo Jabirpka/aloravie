@@ -26,6 +26,46 @@ export interface CheckoutInput {
   couponCode?: string;
 }
 
+/**
+ * Release stock held by checkouts that were started but never paid, so abandoned
+ * carts don't lock inventory forever. Any PENDING order older than the cutoff has
+ * its reserved units returned and is marked CANCELLED. A paid order is never touched.
+ * Returns how many orders were released.
+ */
+export async function expireStalePendingOrders(olderThanMinutes = 30): Promise<number> {
+  const cutoff = new Date(Date.now() - olderThanMinutes * 60 * 1000);
+  const stale = await prisma.order.findMany({
+    where: { status: "PENDING", placedAt: { lt: cutoff } },
+    include: { items: true, payment: true },
+  });
+  if (!stale.length) return 0;
+
+  let location = await prisma.location.findFirst({ where: { isDefault: true } });
+  if (!location) location = await prisma.location.findFirst();
+  const loc = location;
+
+  let count = 0;
+  for (const order of stale) {
+    if (order.payment?.status === "PAID") continue; // never cancel a paid order
+    await prisma.$transaction(async (tx) => {
+      if (loc) {
+        for (const it of order.items) {
+          await tx.inventoryItem.updateMany({
+            where: { variantId: it.variantId, locationId: loc.id },
+            data: { reserved: { decrement: it.quantity } },
+          });
+        }
+      }
+      await tx.order.update({ where: { id: order.id }, data: { status: "CANCELLED" } });
+      if (order.payment) await tx.payment.update({ where: { orderId: order.id }, data: { status: "FAILED" } });
+    });
+    count++;
+  }
+  // Safety: never let a reservation count drift below zero.
+  await prisma.inventoryItem.updateMany({ where: { reserved: { lt: 0 } }, data: { reserved: 0 } });
+  return count;
+}
+
 // Save a checkout address to the customer's address book, unless an identical one
 // is already there. The first address a customer saves becomes their default.
 async function saveAddressToBook(customerId: string, a: AddressSnapshot) {

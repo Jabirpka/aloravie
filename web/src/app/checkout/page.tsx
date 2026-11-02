@@ -89,13 +89,19 @@ export default function CheckoutPage() {
       });
   }, [customer, loading]);
 
-  const taxMinor = useMemo(
-    () => lines.reduce((sum, l) => sum + Math.round(l.priceMinor * l.quantity * gstFor(l.priceMinor)), 0),
+  // Prices are GST-inclusive: this is the GST already contained in the subtotal,
+  // shown for info — it is not added on top.
+  const includedGstMinor = useMemo(
+    () =>
+      lines.reduce((sum, l) => {
+        const inc = l.priceMinor * l.quantity;
+        return sum + (inc - Math.round(inc / (1 + gstFor(l.priceMinor))));
+      }, 0),
     [lines],
   );
   const shippingMinor = subtotalMinor >= FREE_SHIP_MINOR ? 0 : SHIP_FLAT_MINOR;
   const discountMinor = applied?.discountMinor ?? 0;
-  const totalMinor = Math.max(0, subtotalMinor + taxMinor + shippingMinor - discountMinor);
+  const totalMinor = Math.max(0, subtotalMinor + shippingMinor - discountMinor);
 
   async function applyCoupon() {
     if (!couponInput.trim()) return;
@@ -284,12 +290,12 @@ export default function CheckoutPage() {
             {couponErr && <p className="form-error" style={{ margin: "6px 0 0" }}>{couponErr}</p>}
           </div>
           <div className="summary-row"><span>Subtotal</span><span>{formatMoney(subtotalMinor, currency)}</span></div>
-          <div className="summary-row"><span>GST (est.)</span><span>{formatMoney(taxMinor, currency)}</span></div>
           <div className="summary-row"><span>Shipping</span><span>{shippingMinor === 0 ? "Free" : formatMoney(shippingMinor, currency)}</span></div>
           {discountMinor > 0 && (
             <div className="summary-row"><span>Discount{applied ? ` (${applied.code})` : ""}</span><span>−{formatMoney(discountMinor, currency)}</span></div>
           )}
           <div className="summary-row total"><span>Total</span><span>{formatMoney(totalMinor, currency)}</span></div>
+          <div className="summary-row" style={{ fontSize: 12.5 }}><span className="muted">Incl. GST</span><span className="muted">{formatMoney(includedGstMinor, currency)}</span></div>
         </aside>
       </div>
     </section>

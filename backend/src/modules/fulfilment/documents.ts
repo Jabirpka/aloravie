@@ -2,7 +2,7 @@
 // Rendered server-side and returned as text/html; staff open and print (→ PDF).
 import { env } from "../../env.js";
 import { formatMoney } from "../../lib/money.js";
-import { gstRateForUnitPrice } from "../../lib/tax.js";
+import { extractGstMinor, gstRateForUnitPrice } from "../../lib/tax.js";
 
 export interface DocAddress {
   name: string;
@@ -19,9 +19,10 @@ export interface DocOrder {
   orderNumber: string;
   placedAt: Date | string;
   currency: string;
-  subtotalMinor: number;
+  subtotalMinor: number; // GST-inclusive products total
   shippingMinor: number;
-  taxMinor: number;
+  taxMinor: number; // GST contained within subtotalMinor
+  discountMinor: number;
   totalMinor: number;
   email: string | null;
   phone: string | null;
@@ -104,11 +105,13 @@ export function renderInvoice(order: DocOrder): string {
   const buyerState = order.shippingAddress?.state ?? "";
   const intraState = env.SELLER_STATE.trim().toLowerCase() === buyerState.trim().toLowerCase();
 
+  // Prices are GST-inclusive: pull the GST back out of each line's amount.
   const rows = order.items
     .map((it) => {
-      const taxable = it.totalMinor;
+      const inclusive = it.totalMinor;
       const rate = gstRateForUnitPrice(it.unitPriceMinor);
-      const gst = Math.round(taxable * rate);
+      const gst = extractGstMinor(inclusive, rate);
+      const taxable = inclusive - gst;
       return `<tr>
         <td>${esc(it.titleSnapshot)}<br><span class="muted">${esc(it.skuSnapshot)}</span></td>
         <td class="num">${it.quantity}</td>
@@ -120,10 +123,15 @@ export function renderInvoice(order: DocOrder): string {
     })
     .join("");
 
+  const taxableValue = order.subtotalMinor - order.taxMinor;
   const gstRows = intraState
     ? `<tr><td>CGST</td><td class="num">${formatMoney(Math.round(order.taxMinor / 2), order.currency)}</td></tr>
        <tr><td>SGST</td><td class="num">${formatMoney(order.taxMinor - Math.round(order.taxMinor / 2), order.currency)}</td></tr>`
     : `<tr><td>IGST</td><td class="num">${formatMoney(order.taxMinor, order.currency)}</td></tr>`;
+  const discountRow =
+    order.discountMinor > 0
+      ? `<tr><td>Discount</td><td class="num">−${formatMoney(order.discountMinor, order.currency)}</td></tr>`
+      : "";
 
   const body = `
     <div class="row">
@@ -143,10 +151,11 @@ export function renderInvoice(order: DocOrder): string {
       <tbody>${rows}</tbody>
     </table>
     <table class="totals">
-      <tr><td>Subtotal</td><td class="num">${formatMoney(order.subtotalMinor, order.currency)}</td></tr>
+      <tr><td>Taxable value</td><td class="num">${formatMoney(taxableValue, order.currency)}</td></tr>
       ${gstRows}
+      ${discountRow}
       <tr><td>Shipping</td><td class="num">${order.shippingMinor === 0 ? "Free" : formatMoney(order.shippingMinor, order.currency)}</td></tr>
-      <tr class="grand"><td>Total</td><td class="num">${formatMoney(order.totalMinor, order.currency)}</td></tr>
+      <tr class="grand"><td>Total (incl. GST)</td><td class="num">${formatMoney(order.totalMinor, order.currency)}</td></tr>
     </table>
     <div class="foot">
       This is a computer-generated invoice. ${env.SELLER_GSTIN ? "" : "Add your GSTIN in settings before issuing to customers. "}

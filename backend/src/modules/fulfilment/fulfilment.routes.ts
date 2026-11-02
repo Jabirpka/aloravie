@@ -61,6 +61,7 @@ async function loadDocOrder(orderNumber: string): Promise<{ order: DocOrder; shi
     subtotalMinor: order.subtotalMinor,
     shippingMinor: order.shippingMinor,
     taxMinor: order.taxMinor,
+    discountMinor: order.discountMinor,
     totalMinor: order.totalMinor,
     email: order.email,
     phone: order.phone,

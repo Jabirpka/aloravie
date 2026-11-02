@@ -1,7 +1,7 @@
 import { prisma } from "../../prisma.js";
 import { env } from "../../env.js";
 import { AppError, badRequest, conflict, notFound } from "../../lib/http.js";
-import { computeTaxMinor } from "../../lib/tax.js";
+import { extractTaxMinor } from "../../lib/tax.js";
 import { formatOrderNumber } from "../../lib/order-number.js";
 import { createRazorpayOrder } from "../payments/payments.service.js";
 import { validateCoupon } from "../coupons/coupons.service.js";
@@ -123,8 +123,11 @@ export async function createCheckout(customerId: string, input: CheckoutInput) {
   });
 
   const currency = lines[0]!.variant.currency;
+  // Prices are GST-inclusive: the subtotal already contains the tax. taxMinor is
+  // the GST sitting *inside* the subtotal (recorded for the invoice breakdown),
+  // NOT an extra charge, so it is not added to the total again.
   const subtotalMinor = lines.reduce((s, l) => s + l.lineTotalMinor, 0);
-  const taxMinor = computeTaxMinor(
+  const taxMinor = extractTaxMinor(
     lines.map((l) => ({ unitPriceMinor: l.variant.priceMinor, quantity: l.quantity })),
   );
   const shippingMinor = subtotalMinor >= env.FREE_SHIP_THRESHOLD_MINOR ? 0 : env.SHIPPING_FLAT_MINOR;
@@ -140,7 +143,8 @@ export async function createCheckout(customerId: string, input: CheckoutInput) {
     appliedCouponCode = applied.coupon.code;
   }
 
-  const totalMinor = Math.max(0, subtotalMinor + taxMinor + shippingMinor - discountMinor);
+  // GST is already inside subtotalMinor, so it is NOT added again here.
+  const totalMinor = Math.max(0, subtotalMinor + shippingMinor - discountMinor);
 
   // Resolve the shipping address snapshot.
   let shippingAddress: AddressSnapshot;

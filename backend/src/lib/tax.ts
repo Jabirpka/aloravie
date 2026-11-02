@@ -15,10 +15,19 @@ export interface TaxableLine {
   quantity: number;
 }
 
-/** Total GST across lines, in minor units. Tax is GST-inclusive-free (added on top of price). */
-export function computeTaxMinor(lines: TaxableLine[]): number {
+/**
+ * Prices are GST-INCLUSIVE: the listed price already contains GST. These helpers
+ * extract the GST portion that sits inside an inclusive amount, for the invoice
+ * breakdown. base = inclusive / (1 + rate); gst = inclusive − base.
+ */
+export function extractGstMinor(inclusiveMinor: number, rate: number): number {
+  return inclusiveMinor - Math.round(inclusiveMinor / (1 + rate));
+}
+
+/** Total GST contained within GST-inclusive line totals, in minor units. */
+export function extractTaxMinor(lines: TaxableLine[]): number {
   return lines.reduce(
-    (sum, l) => sum + Math.round(l.unitPriceMinor * l.quantity * gstRateForUnitPrice(l.unitPriceMinor)),
+    (sum, l) => sum + extractGstMinor(l.unitPriceMinor * l.quantity, gstRateForUnitPrice(l.unitPriceMinor)),
     0,
   );
 }

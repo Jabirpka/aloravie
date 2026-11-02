@@ -1,7 +1,7 @@
 import type { ChannelType } from "@prisma/client";
 import { prisma } from "../../prisma.js";
 import { badRequest, notFound } from "../../lib/http.js";
-import { computeTaxMinor } from "../../lib/tax.js";
+import { extractTaxMinor } from "../../lib/tax.js";
 import { formatOrderNumber } from "../../lib/order-number.js";
 import { getConnector, marketplaceMode, type IncomingOrder } from "./connector.service.js";
 
@@ -183,8 +183,9 @@ async function ingestOne(
 
   const subtotalMinor = lines.reduce((s, l) => s + l.variant.priceMinor * l.quantity, 0);
   const currency = lines[0]!.variant.currency;
-  const taxMinor = computeTaxMinor(lines.map((l) => ({ unitPriceMinor: l.variant.priceMinor, quantity: l.quantity })));
-  const totalMinor = subtotalMinor + taxMinor; // marketplace handles shipping
+  // Prices are GST-inclusive, so the GST sits inside the subtotal.
+  const taxMinor = extractTaxMinor(lines.map((l) => ({ unitPriceMinor: l.variant.priceMinor, quantity: l.quantity })));
+  const totalMinor = subtotalMinor; // GST already included; marketplace handles shipping
 
   // Find or create the marketplace customer.
   let customerId: string | undefined;

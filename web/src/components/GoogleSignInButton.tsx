@@ -67,6 +67,7 @@ export function GoogleSignInButton({ onSuccess }: { onSuccess?: () => void }) {
           text: "continue_with",
           shape: "pill",
           width: 280,
+          locale: "en",
         });
       })
       .catch(() => setError("Could not load Google sign-in."));

@@ -807,7 +807,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
   .system-feats { grid-template-columns: repeat(2, 1fr); }
   .site-nav { display: none; }
   .nav-toggle { display: inline-flex; align-items: center; }
-  .theme-toggle { display: none; } /* moved into the hamburger menu */
+  .site-actions .theme-toggle { display: none; } /* moved into the hamburger menu */
   .site-header-inner { gap: 14px; }
 }
 @media (max-width: 460px) {

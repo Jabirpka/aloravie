@@ -164,8 +164,13 @@ export function Header() {
               {item.label}
             </Link>
           ))}
-          <button className="link-btn" onClick={() => { toggleTheme(); setMenuOpen(false); }}>
-            {theme === "dark" ? "Switch to daylight" : "Switch to evening"}
+          <button
+            className="link-btn theme-toggle"
+            onClick={() => { toggleTheme(); setMenuOpen(false); }}
+            aria-label={theme === "dark" ? "Switch to daylight mode" : "Switch to evening mode"}
+            title={theme === "dark" ? "Daylight" : "Evening"}
+          >
+            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
           </button>
         </nav>
       )}

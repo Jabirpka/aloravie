@@ -381,7 +381,7 @@ and there's no HTTPS — that's expected, not a gap.
 - [ ] A daily backup has actually produced a file in `~/backups`
 - [ ] Changed the default DB password; `.env` files are not in git
 - [ ] `COURIER_MODE`, `NOTIFY_MODE`, `MARKETPLACE_MODE` switched to live only once each provider's credentials are in `.env`
-- [ ] **Next.js upgraded to 16** before public launch (tracked in `ARCHITECTURE.md`) — a security item, separate from this guide
+- [x] **Next.js on 16 / React 19** — done (`4a7cf94`); the earlier pre-launch security item is cleared
 
 ---
 

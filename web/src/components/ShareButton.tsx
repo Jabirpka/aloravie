@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ShareIcon } from "./icons";
 
 // Share a product. On HTTPS (secure context) this opens the native share sheet
 // — WhatsApp, Instagram, Messages, etc. Over plain http the browser blocks that
@@ -90,8 +91,8 @@ export function ShareButton({ title, price, image }: { title: string; price?: st
 
   return (
     <div className="share-wrap">
-      <button type="button" className="link-btn share-btn" onClick={onShare} aria-label="Share this product">
-        ↗ Share
+      <button type="button" className="link-btn share-btn" onClick={onShare} aria-label="Share this product" title="Share">
+        <ShareIcon />
       </button>
       {open && (
         <div className="share-menu" role="menu">

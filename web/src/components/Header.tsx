@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Wordmark } from "./Wordmark";
 import { useCart } from "./CartProvider";
 import { useAuth } from "./AuthProvider";
+import { BagIcon, MoonIcon, SunIcon, UserIcon } from "./icons";
 
 const NAV = [
   { href: "/shop", label: "Shop" },
@@ -92,8 +93,13 @@ export function Header() {
           ))}
         </nav>
         <div className="site-actions">
-          <button className="link-btn theme-toggle" onClick={toggleTheme} aria-label="Toggle evening mode">
-            {theme === "dark" ? "Daylight" : "Evening"}
+          <button
+            className="link-btn theme-toggle"
+            onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Switch to daylight mode" : "Switch to evening mode"}
+            title={theme === "dark" ? "Daylight" : "Evening"}
+          >
+            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
           </button>
 
           {customer ? (
@@ -126,12 +132,19 @@ export function Header() {
               )}
             </div>
           ) : (
-            <Link href="/account" className="link-btn" aria-label="Sign in">Sign in</Link>
+            <Link href="/account" className="link-btn" aria-label="Sign in" title="Sign in">
+              <UserIcon />
+            </Link>
           )}
 
-          <Link href="/cart" className="link-btn bag-link">
-            Bag
-            {count > 0 && <span className="bag-count" aria-label={`${count} items in bag`}>{count}</span>}
+          <Link
+            href="/cart"
+            className="link-btn bag-link"
+            aria-label={count > 0 ? `Bag, ${count} items` : "Bag"}
+            title="Bag"
+          >
+            <BagIcon />
+            {count > 0 && <span className="bag-count" aria-hidden="true">{count}</span>}
           </Link>
           <button
             className="nav-toggle"

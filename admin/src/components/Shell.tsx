@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useAuth } from "./AdminAuthProvider";
 import { canAccess, type Feature } from "@/lib/access";
+import { MoonIcon, SunIcon } from "./icons";
 
 const NAV: { href: string; label: string; feature: Feature }[] = [
   { href: "/", label: "Dashboard", feature: "dashboard" },
@@ -112,6 +113,14 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
             <h1 className="topbar-title">{title}</h1>
           </div>
           <div className="topbar-user">
+            <button
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Switch to daylight mode" : "Switch to evening mode"}
+              title={theme === "dark" ? "Daylight" : "Evening"}
+            >
+              {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+            </button>
             <div className="user-menu" ref={userMenuRef}>
               <button
                 className="user-trigger"
@@ -135,7 +144,6 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
                   {canAccess(user, "employees") && (
                     <Link href="/settings" onClick={() => setUserMenuOpen(false)}>Account settings</Link>
                   )}
-                  <button type="button" onClick={() => { toggleTheme(); }}>{theme === "dark" ? "Daylight mode" : "Evening mode"}</button>
                   <div className="user-dropdown-sep" />
                   <button type="button" onClick={() => logout()}>Sign out</button>
                 </div>

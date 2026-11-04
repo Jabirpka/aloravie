@@ -95,6 +95,8 @@ h1, h2, h3 { margin: 0; font-weight: 500; }
 .topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .topbar-title { font-size: 20px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .topbar-user { display: flex; align-items: center; gap: 14px; font-size: 13px; color: var(--muted); }
+.theme-toggle { display: inline-flex; align-items: center; justify-content: center; background: none; border: 0; padding: 4px; color: var(--text); cursor: pointer; border-radius: 8px; }
+.theme-toggle:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .nav-burger { display: none; background: none; border: 0; font-size: 22px; line-height: 1; color: var(--text); cursor: pointer; padding: 2px 4px; }
 .nav-burger:hover { color: var(--accent); }
 .nav-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 49; }
